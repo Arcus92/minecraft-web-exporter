@@ -2,6 +2,8 @@
 
 The `MinecraftMapExporter` converts your Minecraft worlds into a format that can be used by the [Minecraft Web Viewer](https://github.com/Arcus92/MinecraftWebViewer) to render your Minecraft world in 3D in your web browser.
 
+Don't believe me? [Try the demo on my homepage!](https://3dmap.david-schulte.de/#w=world&tx=196&tz=382.4&cx=155&cy=93.7&cz=402.6)
+
 ### !!! This project is still under construction !!!
 
 This project is still in the early stages of development. Many features are missing or incomplete. For example:
