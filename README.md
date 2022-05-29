@@ -26,7 +26,7 @@ Support for Linux and Mac is planned but not possible for now due to a the requi
 ## Installation
 
 - Install the [.NET 5 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/5.0) for Window
-- Checkout the the code via `git` or download the zip archive and extract it.
+- Checkout the code via `git` or download the zip archive and extract it.
 - Open a terminal, navigate to the project directory and run `dotnet publish -c Release`.
 - You find the binaries in `MinecraftWebExporter\bin\Release\net5.0\publish`.
 
