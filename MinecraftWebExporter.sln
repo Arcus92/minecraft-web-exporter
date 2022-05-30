@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinecraftWebExporter", "MinecraftWebExporter\MinecraftWebExporter.csproj", "{986267BA-08A9-4146-89F0-31572AE599E4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinecraftWebExporter", "src\MinecraftWebExporter.csproj", "{986267BA-08A9-4146-89F0-31572AE599E4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

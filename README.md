@@ -14,7 +14,7 @@ This project is still in the early stages of development. Many features are miss
 - The exporter doesn't clean up memory during export. This can fill up your memory very quickly. You may have to run the tool multiple times.
 - There is no ceiling culling option to export the nether.
 - All Minecraft versions from 1.13 should work, but I have only tested 1.18.1 and 1.18.2.
-- Worlds that were created before 1.13 can not be exported. Even when converted using the Minecraft world optimizer. There are some information missing from older chunks that only gets updated when you render these in game. So you can 
+- Worlds that were created before 1.13 can not be exported. Even when converted using the Minecraft world optimizer. There are some information missing from older chunks that only gets updated when you render these in game. 
 - The command line interface is won't show any useful error messages or help texts.
 - There is no progress bar when exporting.
  
@@ -29,8 +29,10 @@ Support for Linux and Mac is planned but not possible for now due to a the requi
 
 - Install the [.NET 5 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/5.0) for Window
 - Checkout the code via `git` or download the zip archive and extract it.
-- Open a terminal, navigate to the project directory and run `dotnet publish -c Release`.
-- You find the binaries in `MinecraftWebExporter\bin\Release\net5.0\publish`.
+- Open a terminal, navigate to the project directory.
+- Run `dotnet restore` to restore the NuGet dependencies.
+- Run `dotnet publish -c Release` to build the binaries.
+- You find the binaries in `src\bin\Release\net5.0\publish`.
 
 ## Manual
 
