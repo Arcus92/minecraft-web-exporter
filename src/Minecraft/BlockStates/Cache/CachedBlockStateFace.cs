@@ -388,6 +388,9 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                     case "water_cauldron":
                         tintType = ModelTintType.Water;
                         break;
+                    case "redstone_wire":
+                        tintType = ModelTintType.Redstone;
+                        break;
                 }
             }
 

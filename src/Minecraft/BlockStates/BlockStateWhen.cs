@@ -9,6 +9,10 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
 {
     /// <summary>
     /// The when block for a <see cref="BlockStateMultipart"/>.
+    /// The first level list is the OR condition. Only one of the sub-elements need to match to fulfill the condition.
+    /// The second level directory defines all property that need to match the block property tag to be valid.
+    /// The third level is the value of the property. This can be split by '|' to allow multiple possible values.
+    /// Only one of the property values must match to fulfill the property.
     /// </summary>
     [JsonConverter(typeof(BlockStateWhenJsonConverter))]
     public class BlockStateWhen : List<Dictionary<string, string>>
@@ -24,25 +28,53 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
             if (Count == 0)
                 return true;
 
+            // At least one iteration must match
             foreach (var when in this)
             {
-                var success = true;
+                // All properties must match
+                var allPropertiesMatched = true;
                 foreach (var pair in when)
                 {
                     var tag = propertiesTag?[pair.Key] as StringTag;
                     var value = tag?.Value;
 
-                    if (value != pair.Value)
+                    // The block definition can define multiple values seperated by an 'or' / '|'.
+                    // At least one value must match the property.
+                    var curPropertyMatched = false;
+                    if (value is not null)
                     {
-                        success = false;
+                        var start = 0;
+                        while (start < pair.Value.Length)
+                        {
+                            // Find next pipe
+                            var end = pair.Value.IndexOf('|', start + 1);
+                            if (end < 0) end = pair.Value.Length;
+                            // Use span to not create any more memory allocations in this loop
+                            var subValue = pair.Value.AsSpan().Slice(start, end - start);
+                            if (subValue.Equals(value, StringComparison.InvariantCulture))
+                            {
+                                curPropertyMatched = true;
+                                break;
+                            }
+                            
+                            start = end + 1;
+                        }
+                    }
+                    
+                    // Early skip
+                    if (!curPropertyMatched)
+                    {
+                        allPropertiesMatched = false;
                         break;
                     }
                 }
 
-                if (success)
+                // All properties in this OR group matched. We can bail here.
+                if (allPropertiesMatched)
                     return true;
             }
 
+            // Nothing matched...
             return false;
         }
     }

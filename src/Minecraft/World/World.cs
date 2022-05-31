@@ -445,6 +445,11 @@ namespace MinecraftWebExporter.Minecraft.World
             UV10 = new() {X = 96f / 255f, Y = 161f / 255f, Z = 123f / 255f},
             UV01 = new() {X = 26f / 255f, Y = 191f / 255f, Z = 0f / 255f},
         };
+
+        /// <summary>
+        /// The redstone write color
+        /// </summary>
+        public static readonly Vector3 ColorRedstoneWire = new Vector3() {X = 252f / 255f, Y = 49f / 255f, Z = 0f / 255f};
         
         
         /// <summary>
@@ -460,6 +465,9 @@ namespace MinecraftWebExporter.Minecraft.World
             // This block isn't tinted
             if (tintType == ModelTintType.Default)
                 return Vector3.One;
+
+            if (tintType == ModelTintType.Redstone)
+                return ColorRedstoneWire;
             
             // Fetches the biome info
             var biomeName = await GetBiomeAsync(x, y, z);

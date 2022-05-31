@@ -9,5 +9,6 @@
         Grass,
         Foliage,
         Water,
+        Redstone,
     }
 }
