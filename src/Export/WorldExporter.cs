@@ -27,27 +27,27 @@ namespace MinecraftWebExporter.Export
         /// Get and sets the minecraft asset manager
         /// </summary>
         public AssetManager Assets { get; }
-        
+
         /// <summary>
         /// Gets and sets the world to export
         /// </summary>
         public World World { get; }
-        
+
         /// <summary>
         /// Gets and sets the output path
         /// </summary>
         public string Output { get; }
-        
+
         /// <summary>
         /// Gets and sets the number of threads
         /// </summary>
         public int NumberOfThreads { get; set; } = 16;
-        
+
         /// <summary>
         /// Gets and sets the views
         /// </summary>
         public ExportDetailLevel[] Views { get; set; } = DefaultDetailLevels;
-        
+
         /// <summary>
         /// Gets and sets the minimum world coordinate to export.
         /// Blocks below this point will not be exported.
@@ -92,7 +92,7 @@ namespace MinecraftWebExporter.Export
         /// Gets the world name
         /// </summary>
         public string WorldName => WorldAlias ?? World.Name;
-        
+
         /// <summary>
         /// Creates the map exporter using the given assets
         /// </summary>
@@ -105,9 +105,9 @@ namespace MinecraftWebExporter.Export
             World = world;
             Output = outputPath;
         }
-        
+
         #endregion Parameter
-        
+
         /// <summary>
         /// Exports the world and materials to <see cref="Output"/>.
         /// The world data is placed in a subdirectory named <see cref="WorldName"/>.
@@ -116,90 +116,90 @@ namespace MinecraftWebExporter.Export
         {
             // Export the materials to the output directory
             await ExportMaterialsAsync();
-            
+
             // Create the world output directory
             var worldPath = Path.Combine(Output, WorldName);
             Directory.CreateDirectory(worldPath);
-            
+
             // Export the world info file
             await ExportWorldInfoAsync();
 
-            Console.WriteLine("Exporting regions...");
-            var regions = World.GetRegions();
+            Console.WriteLine("Collecting updated chunks to export...");
+            var exportRegions = await CollectExportTasksAsync();
 
-            var centerX = 0;
-            var centerZ = 0;
             
-            // Handle min world border
-            if (WorldBorderMin.HasValue)
+            var statsLock = new object();
+            var statsTotalRegions = exportRegions.Count;
+            var statsTotalChunks = exportRegions.Sum(r => r.Chunks.Length);
+            var statsExportedRegions = 0;
+            var statsExportedChunks = 0;
+
+            void WriteProgressToConsole()
             {
-                var regionMinX = (int)MathF.Floor(WorldBorderMin.Value.X / 32 / 16);
-                var regionMinZ = (int)MathF.Floor(WorldBorderMin.Value.Z / 32 / 16);
-                regions = regions.Where(r => r.X >= regionMinX && r.Z >= regionMinZ);
+                lock (statsLock)
+                {
+                    var percent = statsExportedChunks / (double)statsTotalChunks;
+                    Console.WriteLine(
+                        $"[{percent * 100:0}%] Regions: {statsExportedRegions} / {statsTotalRegions} - Chunks: {statsExportedChunks} / {statsTotalChunks}");
+                }
             }
-            
-            // Handle max world border
-            if (WorldBorderMax.HasValue)
+
+            Console.WriteLine($"Exporting {statsTotalRegions} regions with {statsTotalChunks} chunks...");
+            await exportRegions.ParallelForEachAsync(async (exportRegion) =>
             {
-                var regionMaxX = (int)MathF.Floor(WorldBorderMax.Value.X / 32 / 16);
-                var regionMaxZ = (int)MathF.Floor(WorldBorderMax.Value.Z / 32 / 16);
-                regions = regions.Where(r => r.X <= regionMaxX && r.Z <= regionMaxZ);
-            }
-            
-            
-            var regionList = regions.OrderBy(r => Math.Abs(r.X - centerX) + Math.Abs(r.Z - centerZ)).ToList();
-            await regionList.ParallelForEachAsync(async (region) =>
-            {
-                await region.LoadAsync();
-                
-                var regionName = $"r.{region.X}.{region.Z}";
+                var regionName = $"r.{exportRegion.X}.{exportRegion.Z}";
                 var regionPath = Path.Combine(Output, WorldName, regionName);
-                
+
                 Directory.CreateDirectory(regionPath);
-                
+
                 var regionInfoPath = Path.Combine(regionPath, "info.json");
-                var regionInfo = await RegionInfo.LoadAsync(regionInfoPath);
-                
-                Console.WriteLine($"Exporting region '{regionName}'...");
+                var regionInfo = exportRegion.RegionInfo;
 
                 // Count the updates, so we don't write the region info file for each chunk.
                 var updates = 0;
-                foreach (var view in Views)
+                foreach (var exportChunk in exportRegion.Chunks)
                 {
-                    var chunks = view.ChunksInRegion;
-                    for (byte chunkX = 0; chunkX < chunks; chunkX++)
-                    for (byte chunkZ = 0; chunkZ < chunks; chunkZ++)
+                    var view = exportChunk.View;
+                    var chunkMeshPath = Path.Combine(regionPath, $"{view.Filename}.{exportChunk.X}.{exportChunk.Z}.m");
+
+                    // Exports the chunk and all blocks
+                    await ExportChunkToFileAsync(view, chunkMeshPath, exportRegion.Region, exportChunk.X, exportChunk.Z);
+
+                    // Sets the update timestamp
+                    regionInfo.SetChunkTimestamp(view, exportChunk.X, exportChunk.Z, exportChunk.Timestamp);
+
+                    lock (statsLock)
                     {
-                        // Checks the chunk timestamp
-                        var timestamp = GetChunkTimestamp(view, region, chunkX, chunkZ);
-                        if (regionInfo.GetChunkTimestamp(view, chunkX, chunkZ) >= timestamp)
-                            continue;
-
-                        var chunkMeshPath = Path.Combine(regionPath, $"{view.Filename}.{chunkX}.{chunkZ}.m");
-
-                        // Exports the chunk and all blocks
-                        await ExportChunkToFileAsync(view, chunkMeshPath, region, chunkX, chunkZ);
-
-                        // Sets the update timestamp
-                        regionInfo.SetChunkTimestamp(view, chunkX, chunkZ, timestamp);
-
-                        updates++;
-                        if (updates > 16)
-                        {
-                            updates = 0;
-                            await RegionInfo.SaveAsync(regionInfoPath, regionInfo);
-                        }
+                        statsExportedChunks++;
                     }
-
-                    // One final write
-                    if (updates > 0)
+                    
+                    updates++;
+                    if (updates > 16)
                     {
+                        updates = 0;
                         await RegionInfo.SaveAsync(regionInfoPath, regionInfo);
+
+                        WriteProgressToConsole();
                     }
                 }
-            }, NumberOfThreads);
-        }
 
+                lock (statsLock)
+                {
+                    statsExportedRegions++;
+                }
+                
+                // One final write
+                if (updates > 0)
+                {
+                    await RegionInfo.SaveAsync(regionInfoPath, regionInfo);
+                    
+                    WriteProgressToConsole();
+                }
+            }, NumberOfThreads);
+            
+            Console.WriteLine("Export finished!");
+        }
+        
         /// <summary>
         /// Export the world info file
         /// </summary>
@@ -221,6 +221,147 @@ namespace MinecraftWebExporter.Export
         }
         
         #region Export
+
+        /// <summary>
+        /// This struct is used to calculate all remaining region export tasks by <see cref="WorldExporter.CollectExportTasksAsync()"/>.
+        /// </summary>
+        private readonly struct ExportTaskRegion
+        {
+            /// <summary>
+            /// Gets the region to export
+            /// </summary>
+            public Region Region { get; init; }
+            
+            /// <summary>
+            /// Gets the region info
+            /// </summary>
+            public RegionInfo RegionInfo { get; init; }
+            
+            /// <summary>
+            /// Gets all chunk export task in this reagion
+            /// </summary>
+            public ExportTaskChunk[] Chunks { get; init; }
+            
+            /// <summary>
+            /// Gets the region x coordinate
+            /// </summary>
+            public int X => Region.X;
+            
+            /// <summary>
+            ///  Gets the region z coordinate
+            /// </summary>
+            public int Z => Region.Z;
+        }
+        
+        /// <summary>
+        /// This struct is used to calculate all remaining chunk export tasks
+        /// </summary>
+        private readonly struct ExportTaskChunk
+        {
+            /// <summary>
+            /// Gets the detail level for this chunk
+            /// </summary>
+            public ExportDetailLevel View { get; init; }
+            
+            /// <summary>
+            /// Gets the x chunk coordinate relative to <see cref="View"/>
+            /// </summary>
+            public byte X { get; init; }
+            
+            /// <summary>
+            /// Gets the z chunk coordinate relative to <see cref="View"/>
+            /// </summary>
+            public byte Z { get; init; }
+            
+            /// <summary>
+            /// Gets the last update timestamp for this chunk
+            /// </summary>
+            public long Timestamp { get; init; }
+        }
+
+        /// <summary>
+        /// Collects a list with all regions and chunks to export.
+        /// This will skip chunks that were already exported and didn't change.
+        /// </summary>
+        /// <returns></returns>
+        private async Task<List<ExportTaskRegion>> CollectExportTasksAsync()
+        {
+            var exportRegions = new List<ExportTaskRegion>();
+            await CollectExportTasksAsync(exportRegions);
+            return exportRegions;
+        }
+
+        /// <summary>
+        /// Collects a list with all regions and chunks to export.
+        /// This will skip chunks that were already exported and didn't change.
+        /// </summary>
+        /// <param name="exportRegions">This collection is filled with the regions to export</param>
+        private async Task CollectExportTasksAsync(ICollection<ExportTaskRegion> exportRegions)
+        {
+            var regions = World.GetRegions();
+
+            var centerX = 0;
+            var centerZ = 0;
+            
+            // Handle min world border
+            if (WorldBorderMin.HasValue)
+            {
+                var regionMinX = (int)MathF.Floor(WorldBorderMin.Value.X / 32 / 16);
+                var regionMinZ = (int)MathF.Floor(WorldBorderMin.Value.Z / 32 / 16);
+                regions = regions.Where(r => r.X >= regionMinX && r.Z >= regionMinZ);
+            }
+            
+            // Handle max world border
+            if (WorldBorderMax.HasValue)
+            {
+                var regionMaxX = (int)MathF.Floor(WorldBorderMax.Value.X / 32 / 16);
+                var regionMaxZ = (int)MathF.Floor(WorldBorderMax.Value.Z / 32 / 16);
+                regions = regions.Where(r => r.X <= regionMaxX && r.Z <= regionMaxZ);
+            }
+
+            var exportChunks = new List<ExportTaskChunk>();
+            
+            var regionList = regions.OrderBy(r => Math.Abs(r.X - centerX) + Math.Abs(r.Z - centerZ)).ToList();
+            foreach (var region in regionList)
+            {
+                exportChunks.Clear();
+                
+                await region.LoadAsync();
+                
+                var regionName = $"r.{region.X}.{region.Z}";
+                var regionInfoPath = Path.Combine(Output, WorldName, regionName, "info.json");
+                var regionInfo = await RegionInfo.LoadAsync(regionInfoPath);
+                foreach (var view in Views)
+                {
+                    var chunks = view.ChunksInRegion;
+                    for (byte chunkX = 0; chunkX < chunks; chunkX++)
+                    for (byte chunkZ = 0; chunkZ < chunks; chunkZ++)
+                    {
+                        // Checks the chunk timestamp
+                        var timestamp = GetChunkTimestamp(view, region, chunkX, chunkZ);
+                        if (regionInfo.GetChunkTimestamp(view, chunkX, chunkZ) >= timestamp)
+                            continue;
+
+                        exportChunks.Add(new ExportTaskChunk()
+                        {
+                            X = chunkX,
+                            Z = chunkZ,
+                            Timestamp = timestamp,
+                            View = view,
+                        });
+                    }
+                }
+                
+                if (exportChunks.Count == 0) continue;
+                
+                exportRegions.Add(new ExportTaskRegion()
+                {
+                    Region = region,
+                    RegionInfo = regionInfo,
+                    Chunks = exportChunks.ToArray()
+                });
+            }
+        }
         
         /// <summary>
         /// Exports the given chunk position to <paramref name="path"/>.
