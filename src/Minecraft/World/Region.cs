@@ -65,14 +65,14 @@ namespace MinecraftWebExporter.Minecraft.World
             {
                 return true;
             }
+            
+            var path = GetRegionFilePath();
+            if (!File.Exists(path))
+            {
+                return true;
+            }
 
             return await Task.Run(() => {
-                var path = GetRegionFilePath();
-                if (!File.Exists(path))
-                {
-                    return true;
-                }
-
                 const int chunkCount = 32 * 32;
                 m_Stream = new FileStream(path, FileMode.Open, FileAccess.Read);
                 m_ChunkOffsets = new RegionChunkOffset[chunkCount];
@@ -193,8 +193,6 @@ namespace MinecraftWebExporter.Minecraft.World
         /// <returns></returns>
         public async ValueTask<Chunk?> GetOrLoadChunkAsync(byte x, byte z)
         {
-            if (m_Stream is null) throw new InvalidOperationException("The region file stream is closed!");
-            
             if (m_Chunks.TryGetValue((x, z), out var chunk))
             {
                 return chunk;
@@ -212,6 +210,8 @@ namespace MinecraftWebExporter.Minecraft.World
                 return null;
             }
 
+            if (m_Stream is null) throw new InvalidOperationException("The region file stream is closed!");
+            
             byte compressionMode;
             byte[] data;
             lock (m_Stream)
