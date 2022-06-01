@@ -38,7 +38,7 @@ namespace MinecraftWebExporter.Minecraft.World
         /// <summary>
         /// The internal biome list
         /// </summary>
-        private static readonly Dictionary<string, Biome> _biomes = new();
+        private static readonly Dictionary<string, Biome> Biomes = new();
 
         static Biome()
         {
@@ -152,7 +152,7 @@ namespace MinecraftWebExporter.Minecraft.World
         /// <param name="waterSurfaceColor"></param>
         public static void Add(string name, float temperature, float rainfall, Vector3 waterSurfaceColor)
         {
-            _biomes.Add(name, new Biome()
+            Biomes.Add(name, new Biome()
             {
                 Name = name,
                 Temperature = temperature,
@@ -169,7 +169,7 @@ namespace MinecraftWebExporter.Minecraft.World
         /// <param name="rainfall"></param>
         public static void Add(string name, float temperature, float rainfall)
         {
-            _biomes.Add(name, new Biome()
+            Biomes.Add(name, new Biome()
             {
                 Name = name,
                 Temperature = temperature,
@@ -185,7 +185,7 @@ namespace MinecraftWebExporter.Minecraft.World
         /// <returns></returns>
         public static Biome Get(string? name)
         {
-            if (name is not null && _biomes.TryGetValue(name, out var biome))
+            if (name is not null && Biomes.TryGetValue(name, out var biome))
             {
                 return biome;
             }

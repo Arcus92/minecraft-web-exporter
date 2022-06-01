@@ -1,7 +1,7 @@
 ﻿namespace MinecraftWebExporter.Minecraft.World
 {
     /// <summary>
-    /// The chunk offset in a <see cref="RegionFile"/>
+    /// The chunk offset in a <see cref="Region"/>
     /// </summary>
     public readonly struct RegionChunkOffset
     {

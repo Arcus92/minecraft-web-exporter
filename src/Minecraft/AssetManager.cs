@@ -102,7 +102,7 @@ namespace MinecraftWebExporter.Minecraft
         /// </summary>
         public void Dispose()
         {
-            Source?.Dispose();
+            Source.Dispose();
         }
     }
 }

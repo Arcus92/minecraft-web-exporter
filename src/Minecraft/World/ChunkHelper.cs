@@ -62,8 +62,7 @@ namespace MinecraftWebExporter.Minecraft.World
         private static ushort[] ReadLongArrayBefore2529(int bits, int count, LongArrayTag arrayTag)
         {
             var bitMask = (ushort)(1 << bits);
-            var components = 64 / bits;
-                
+
             var i = 0;
             var longCount = arrayTag.Count;
             var result = new ushort[count];

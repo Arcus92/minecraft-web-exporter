@@ -41,8 +41,7 @@ namespace MinecraftWebExporter.Minecraft.Models
 
             var sin = MathF.Sin(angleInRad);
             var cos = MathF.Cos(angleInRad);
-            var oneMinusCos = 1.0f - cos;
-            
+
             if (Rescale)
             {
                 var scale = 1f / cos;

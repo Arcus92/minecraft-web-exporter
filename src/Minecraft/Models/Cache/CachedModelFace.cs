@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using MinecraftWebExporter.Minecraft.BlockStates;
-using MinecraftWebExporter.Minecraft.BlockStates.Cache;
 using MinecraftWebExporter.Structs;
 
 namespace MinecraftWebExporter.Minecraft.Models.Cache

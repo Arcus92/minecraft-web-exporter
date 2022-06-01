@@ -177,7 +177,7 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
         /// <param name="options"></param>
         public override void Write(Utf8JsonWriter writer, BlockStateWhen value, JsonSerializerOptions options)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException();
         }
     }
 }

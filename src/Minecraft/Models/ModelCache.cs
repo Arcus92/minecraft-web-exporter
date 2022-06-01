@@ -82,10 +82,10 @@ namespace MinecraftWebExporter.Minecraft.Models
                 return model;
             }
             
-            var heightNW = heights.Item1 / 8f;
-            var heightNE = heights.Item2 / 8f;
-            var heightSE = heights.Item3 / 8f;
-            var heightSW = heights.Item4 / 8f;
+            var heightNorthWest = heights.Item1 / 8f;
+            var heightNorthEast = heights.Item2 / 8f;
+            var heightSouthEast = heights.Item3 / 8f;
+            var heightSouthWest = heights.Item4 / 8f;
             var cull = heights.Item1 == 8 && heights.Item2 == 8 && heights.Item3 == 8 && heights.Item4 == 8;
             
             var textureStill = fluidType == ModelFluidType.Water ? World.World.TextureWaterStill : World.World.TextureLavaStill;
@@ -104,10 +104,10 @@ namespace MinecraftWebExporter.Minecraft.Models
                 FluidType = fluidType,
                 TintType = tintType,
                 Normal = Vector3.AxisY,
-                VertexA = new Vector3() {X = 0f, Y = heightNW, Z = 0f},
-                VertexB = new Vector3() {X = 0f, Y = heightSW, Z = 1f},
-                VertexC = new Vector3() {X = 1f, Y = heightSE, Z = 1f},
-                VertexD = new Vector3() {X = 1f, Y = heightNE, Z = 0f},
+                VertexA = new Vector3() {X = 0f, Y = heightNorthWest, Z = 0f},
+                VertexB = new Vector3() {X = 0f, Y = heightSouthWest, Z = 1f},
+                VertexC = new Vector3() {X = 1f, Y = heightSouthEast, Z = 1f},
+                VertexD = new Vector3() {X = 1f, Y = heightNorthEast, Z = 0f},
             };
             // Down
             faces[1] = new CachedBlockStateFace()
@@ -136,10 +136,10 @@ namespace MinecraftWebExporter.Minecraft.Models
                 FluidType = fluidType,
                 TintType = tintType,
                 Normal = -Vector3.AxisZ,
-                VertexA = new Vector3() {X = 1f, Y = heightNE, Z = 0f},
+                VertexA = new Vector3() {X = 1f, Y = heightNorthEast, Z = 0f},
                 VertexB = new Vector3() {X = 1f, Y = 0f, Z = 0f},
                 VertexC = new Vector3() {X = 0f, Y = 0f, Z = 0f},
-                VertexD = new Vector3() {X = 0f, Y = heightNW, Z = 0f},
+                VertexD = new Vector3() {X = 0f, Y = heightNorthWest, Z = 0f},
             };
             // South
             faces[3] = new CachedBlockStateFace()
@@ -152,10 +152,10 @@ namespace MinecraftWebExporter.Minecraft.Models
                 FluidType = fluidType,
                 TintType = tintType,
                 Normal = Vector3.AxisZ,
-                VertexA = new Vector3() {X = 0f, Y = heightSW, Z = 1f},
+                VertexA = new Vector3() {X = 0f, Y = heightSouthWest, Z = 1f},
                 VertexB = new Vector3() {X = 0f, Y = 0f, Z = 1f},
                 VertexC = new Vector3() {X = 1f, Y = 0f, Z = 1f},
-                VertexD = new Vector3() {X = 1f, Y = heightSE, Z = 1f},
+                VertexD = new Vector3() {X = 1f, Y = heightSouthEast, Z = 1f},
             };
             // West
             faces[4] = new CachedBlockStateFace()
@@ -168,10 +168,10 @@ namespace MinecraftWebExporter.Minecraft.Models
                 FluidType = fluidType,
                 TintType = tintType,
                 Normal = -Vector3.AxisX,
-                VertexA = new Vector3() {X = 0f, Y = heightNW, Z = 0f},
+                VertexA = new Vector3() {X = 0f, Y = heightNorthWest, Z = 0f},
                 VertexB = new Vector3() {X = 0f, Y = 0f, Z = 0f},
                 VertexC = new Vector3() {X = 0f, Y = 0f, Z = 1f},
-                VertexD = new Vector3() {X = 0f, Y = heightSW, Z = 1f},
+                VertexD = new Vector3() {X = 0f, Y = heightSouthWest, Z = 1f},
             };
             // East
             faces[5] = new CachedBlockStateFace()
@@ -184,10 +184,10 @@ namespace MinecraftWebExporter.Minecraft.Models
                 FluidType = fluidType,
                 TintType = tintType,
                 Normal = Vector3.AxisX,
-                VertexA = new Vector3() {X = 1f, Y = heightSE, Z = 1f},
+                VertexA = new Vector3() {X = 1f, Y = heightSouthEast, Z = 1f},
                 VertexB = new Vector3() {X = 1f, Y = 0f, Z = 1f},
                 VertexC = new Vector3() {X = 1f, Y = 0f, Z = 0f},
-                VertexD = new Vector3() {X = 1f, Y = heightNE, Z = 0f},
+                VertexD = new Vector3() {X = 1f, Y = heightNorthEast, Z = 0f},
             };
             
             model = new CachedBlockStateVariant()

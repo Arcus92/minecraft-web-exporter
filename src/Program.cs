@@ -11,7 +11,7 @@ namespace MinecraftWebExporter
 {
     /// <summary>
     /// A tool to export Minecraft worlds into a binary data format that can be read by the Minecraft web viewer.
-    /// The main entrypoint will handle the command line parameters. The actual export is done in <see cref="MapExporter"/>.
+    /// The main entrypoint will handle the command line parameters. The actual export is done in <see cref="WorldExporter"/>.
     /// </summary>
     public static class Program
     {
@@ -195,74 +195,28 @@ namespace MinecraftWebExporter
 
             // Loads the world
             var world = new World(assets, pathToWorld);
-
-            var mapSettings = new ExportSettings()
-            {
-                Views = new []
-                {
-                    new ExportDetailLevel()
-                    {
-                        Filename = "h0",
-                        Type = ExportDetailLevelType.Heightmap,
-                        BlockSpan = 1,
-                        ChunkSpan = 4,
-                        Distance = 100,
-                    },
-                    new ExportDetailLevel()
-                    {
-                        Filename = "h1",
-                        Type = ExportDetailLevelType.Heightmap,
-                        BlockSpan = 2,
-                        ChunkSpan = 8,
-                        Distance = 250,
-                    },
-                    new ExportDetailLevel()
-                    {
-                        Filename = "h2",
-                        Type = ExportDetailLevelType.Heightmap,
-                        BlockSpan = 4,
-                        ChunkSpan = 16,
-                        Distance = 400,
-                    },
-                    new ExportDetailLevel()
-                    {
-                        Filename = "h3",
-                        Type = ExportDetailLevelType.Heightmap,
-                        BlockSpan = 8,
-                        ChunkSpan = 32,
-                        Distance = 800,
-                    },
-                    new ExportDetailLevel()
-                    {
-                        Filename = "b",
-                        Type = ExportDetailLevelType.Blocks,
-                        BlockSpan = 1,
-                        ChunkSpan = 2,
-                        Distance = 0,
-                    }
-                }
-            };
             
             // Create the exporter
-            var exporter = new MapExporter(assets);
-            exporter.Output = pathToOutput;
-            if (numberOfThreads.HasValue)
+            var exporter = new WorldExporter(assets, world, pathToOutput)
             {
-                exporter.NumberOfThreads = numberOfThreads.Value;
-            }
+                WorldAlias = worldAlias,
+                WorldBorderMin = worldMin,
+                WorldBorderMax = worldMax,
+                WorldHome = worldHome,
+                UndergroundCulling = culling,
+            };
 
             if (cullingHeight.HasValue)
             {
                 exporter.UndergroundCullingHeight = cullingHeight.Value;
             }
             
-            exporter.WorldBorderMin = worldMin;
-            exporter.WorldBorderMax = worldMax;
-            exporter.WorldHome = worldHome;
-            exporter.UndergroundCulling = culling;
-
-            await exporter.ExportMaterials();
-            await exporter.ExportWorld(mapSettings, world, worldAlias ?? world.Name);
+            if (numberOfThreads.HasValue)
+            {
+                exporter.NumberOfThreads = numberOfThreads.Value;
+            }
+            
+            await exporter.ExportAsync();
 
             assets.Dispose();
         }

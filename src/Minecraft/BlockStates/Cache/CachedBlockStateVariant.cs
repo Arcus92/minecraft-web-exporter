@@ -1,6 +1,4 @@
-﻿using MinecraftWebExporter.Minecraft.Models.Cache;
-
-namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
+﻿namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
 {
     /// <summary>
     /// A single variant for a block state

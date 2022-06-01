@@ -13,19 +13,15 @@ using MinecraftWebExporter.Minecraft.Models;
 using MinecraftWebExporter.Minecraft.Textures;
 using MinecraftWebExporter.Minecraft.World;
 using MinecraftWebExporter.Structs;
-using Region = MinecraftWebExporter.Minecraft.World.Region;
 
 namespace MinecraftWebExporter.Export
 {
     /// <summary>
-    /// The exporter class
+    /// This class exports a minecraft world into the web viewer format. Just call <see cref="ExportAsync"/>.
     /// </summary>
-    public class MapExporter
+    public class WorldExporter
     {
-        /// <summary>
-        /// Gets and sets the output path
-        /// </summary>
-        public string? Output { get; set; }
+        #region Parameter
 
         /// <summary>
         /// Get and sets the minecraft asset manager
@@ -33,10 +29,25 @@ namespace MinecraftWebExporter.Export
         public AssetManager Assets { get; }
         
         /// <summary>
+        /// Gets and sets the world to export
+        /// </summary>
+        public World World { get; }
+        
+        /// <summary>
+        /// Gets and sets the output path
+        /// </summary>
+        public string Output { get; }
+        
+        /// <summary>
         /// Gets and sets the number of threads
         /// </summary>
         public int NumberOfThreads { get; set; } = 16;
-
+        
+        /// <summary>
+        /// Gets and sets the views
+        /// </summary>
+        public ExportDetailLevel[] Views { get; set; } = DefaultDetailLevels;
+        
         /// <summary>
         /// Gets and sets the minimum world coordinate to export.
         /// Blocks below this point will not be exported.
@@ -71,73 +82,50 @@ namespace MinecraftWebExporter.Export
         public int UndergroundCullingHeight { get; set; } = 64;
 
         /// <summary>
+        /// Gets ands the world alias for the export.
+        /// If set, the world in the output directory will be renamed to this property.
+        /// If not set, the default world name will be used.
+        /// </summary>
+        public string? WorldAlias { get; set; }
+
+        /// <summary>
+        /// Gets the world name
+        /// </summary>
+        public string WorldName => WorldAlias ?? World.Name;
+        
+        /// <summary>
         /// Creates the map exporter using the given assets
         /// </summary>
         /// <param name="assets"></param>
-        public MapExporter(AssetManager assets)
+        /// <param name="world"></param>
+        /// <param name="outputPath"></param>
+        public WorldExporter(AssetManager assets, World world, string outputPath)
         {
             Assets = assets;
-            m_World = new World(assets);
+            World = world;
+            Output = outputPath;
         }
         
-        /// <summary>
-        /// The current exported world
-        /// </summary>
-        private World m_World;
-
-        private static readonly string[] MaterialPrefixes = new[] {"block", "entity", "environment"};
+        #endregion Parameter
         
         /// <summary>
-        /// Exports the materials to <see cref="Output"/>
+        /// Exports the world and materials to <see cref="Output"/>.
+        /// The world data is placed in a subdirectory named <see cref="WorldName"/>.
         /// </summary>
-        public async Task ExportMaterials()
+        public async Task ExportAsync()
         {
-            if (Output is null) throw new ArgumentNullException(nameof(Output));
+            // Export the materials to the output directory
+            await ExportMaterialsAsync();
             
-            // Writes the materials
-            Console.WriteLine("Exporting materials...");
-            foreach (var texturePrefix in MaterialPrefixes)
-            {
-                var mtlFileName = texturePrefix + ".mats";
-                var mtlFilePath = Path.Combine(Output, mtlFileName);
-
-                Console.WriteLine($"Exporting {mtlFileName}...");
-                await ExportMaterialsAsync(mtlFilePath, texturePrefix + "/");
-            }
-        }
-
-        /// <summary>
-        /// Exports the world for <paramref name="world"/> to <see cref="Output"/>.
-        /// </summary>
-        /// <param name="exportSettings"></param>
-        /// <param name="world"></param>
-        /// <param name="worldName"></param>
-        public async Task ExportWorld(ExportSettings exportSettings, World world, string worldName)
-        {
-            if (Output is null) throw new ArgumentNullException(nameof(Output));
-            
-            m_World = world;
-            
-            // Create the output directory
-            var worldPath = Path.Combine(Output, worldName);
+            // Create the world output directory
+            var worldPath = Path.Combine(Output, WorldName);
             Directory.CreateDirectory(worldPath);
             
-            Console.WriteLine("Exporting world info.json...");
-            
-            var worldInfo = new WorldInfo();
-            worldInfo.Views = exportSettings.Views;
-            worldInfo.Materials = MaterialPrefixes;
-            if (WorldHome.HasValue)
-            {
-                worldInfo.Home = WorldHome.Value;
-            }
+            // Export the world info file
+            await ExportWorldInfoAsync();
 
-            var worldInfoPath = Path.Combine(Output, worldName, "info.json");
-            await WorldInfo.SaveAsync(worldInfoPath, worldInfo);
-            
-            
             Console.WriteLine("Exporting regions...");
-            var regions = m_World.GetRegions();
+            var regions = World.GetRegions();
 
             var centerX = 0;
             var centerZ = 0;
@@ -165,7 +153,7 @@ namespace MinecraftWebExporter.Export
                 await region.LoadAsync();
                 
                 var regionName = $"r.{region.X}.{region.Z}";
-                var regionPath = Path.Combine(Output, worldName, regionName);
+                var regionPath = Path.Combine(Output, WorldName, regionName);
                 
                 Directory.CreateDirectory(regionPath);
                 
@@ -176,7 +164,7 @@ namespace MinecraftWebExporter.Export
 
                 // Count the updates, so we don't write the region info file for each chunk.
                 var updates = 0;
-                foreach (var view in exportSettings.Views)
+                foreach (var view in Views)
                 {
                     var chunks = view.ChunksInRegion;
                     for (byte chunkX = 0; chunkX < chunks; chunkX++)
@@ -190,7 +178,7 @@ namespace MinecraftWebExporter.Export
                         var chunkMeshPath = Path.Combine(regionPath, $"{view.Filename}.{chunkX}.{chunkZ}.m");
 
                         // Exports the chunk and all blocks
-                        await ExportChunkToFile(view, chunkMeshPath, region, chunkX, chunkZ);
+                        await ExportChunkToFileAsync(view, chunkMeshPath, region, chunkX, chunkZ);
 
                         // Sets the update timestamp
                         regionInfo.SetChunkTimestamp(view, chunkX, chunkZ, timestamp);
@@ -213,27 +201,23 @@ namespace MinecraftWebExporter.Export
         }
 
         /// <summary>
-        /// Gets the timestamp from the given chunk
+        /// Export the world info file
         /// </summary>
-        /// <param name="view"></param>
-        /// <param name="region"></param>
-        /// <param name="chunkX"></param>
-        /// <param name="chunkZ"></param>
-        /// <returns></returns>
-        private long GetChunkTimestamp(ExportDetailLevel view, Minecraft.World.Region region, byte chunkX, byte chunkZ)
+        /// <exception cref="ArgumentNullException"></exception>
+        private async Task ExportWorldInfoAsync()
         {
-            var timestamp = 0;
+            Console.WriteLine("Exporting world info.json...");
 
-            var chunks = view.ChunkSpan;
-            for (byte x = 0; x < chunks; x++)
-            for (byte z = 0; z < chunks; z++)
+            var worldInfo = new WorldInfo();
+            worldInfo.Views = Views;
+            worldInfo.Materials = MaterialPrefixes;
+            if (WorldHome.HasValue)
             {
-                var t = region.GetChunkTimestamp((byte) (chunkX * chunks + x), (byte) (chunkZ * chunks + z));
-                if (t > timestamp)
-                    timestamp = t;
+                worldInfo.Home = WorldHome.Value;
             }
-            
-            return timestamp;
+
+            var worldInfoPath = Path.Combine(Output, WorldName, "info.json");
+            await WorldInfo.SaveAsync(worldInfoPath, worldInfo);
         }
         
         #region Export
@@ -246,7 +230,7 @@ namespace MinecraftWebExporter.Export
         /// <param name="region"></param>
         /// <param name="chunkX"></param>
         /// <param name="chunkZ"></param>
-        private async Task ExportChunkToFile(ExportDetailLevel view, string path, Minecraft.World.Region region, byte chunkX, byte chunkZ)
+        private async Task ExportChunkToFileAsync( ExportDetailLevel view, string path, Region region, byte chunkX, byte chunkZ)
         {
             // Defines the export region
             var blocksInChunk =  16 / view.BlockSpan * view.ChunkSpan;
@@ -277,7 +261,7 @@ namespace MinecraftWebExporter.Export
             }
 
             // Writes the file
-            await ExportToFile(view, path, originX, originZ, minX, minY, minZ, maxX, maxY, maxZ);
+            await ExportToFileAsync(view, path, originX, originZ, minX, minY, minZ, maxX, maxY, maxZ);
         }
 
         /// <summary>
@@ -293,18 +277,18 @@ namespace MinecraftWebExporter.Export
         /// <param name="maxX"></param>
         /// <param name="maxY"></param>
         /// <param name="maxZ"></param>
-        private async Task ExportToFile(ExportDetailLevel view, string path, int originX, int originZ, int minX, int minY, int minZ, int maxX, int maxY,
+        private async Task ExportToFileAsync(ExportDetailLevel view, string path, int originX, int originZ, int minX, int minY, int minZ, int maxX, int maxY,
             int maxZ)
         {
             // Creates a new mesh file
             var meshFile = new MeshFile();
             if (view.Type == ExportDetailLevelType.Heightmap)
             {
-                await ExportHeightmap(view, meshFile, originX, originZ, minX, minZ, maxX, maxZ);
+                await ExportHeightmapAsync(view, meshFile, originX, originZ, minX, minZ, maxX, maxZ);
             }
             else
             {
-                await ExportBlocks(view, meshFile, originX, originZ, minX, minY, minZ, maxX, maxY, maxZ);
+                await ExportBlocksAsync(meshFile, originX, originZ, minX, minY, minZ, maxX, maxY, maxZ);
             }
 
             // Skip empty
@@ -325,7 +309,6 @@ namespace MinecraftWebExporter.Export
         /// <summary>
         /// Writes all blocks in the given area into <paramref name="meshFile"/>.
         /// </summary>
-        /// <param name="view"></param>
         /// <param name="meshFile"></param>
         /// <param name="originX"></param>
         /// <param name="originZ"></param>
@@ -335,14 +318,14 @@ namespace MinecraftWebExporter.Export
         /// <param name="maxX"></param>
         /// <param name="maxY"></param>
         /// <param name="maxZ"></param>
-        private async Task ExportBlocks(ExportDetailLevel view, MeshFile meshFile,  int originX, int originZ, int minX, int minY, int minZ, int maxX, int maxY,
-            int maxZ)
+        private async Task ExportBlocksAsync(MeshFile meshFile,  
+            int originX, int originZ, int minX, int minY, int minZ, int maxX, int maxY, int maxZ)
         {
             for (var x = minX; x < maxX; x++)
             for (var y = minY; y < maxY; y++)
             for (var z = minZ; z < maxZ; z++)
             {
-                var block = await m_World.GetBlockAsync(x, y, z);
+                var block = await World.GetBlockAsync(x, y, z);
                 var blockVariant = block.GetRandomVariant();
                 if (blockVariant.Faces is null)
                 {
@@ -350,7 +333,7 @@ namespace MinecraftWebExporter.Export
                 }
 
                 // Removes non surface blocks
-                if (UndergroundCulling && !await IsVisibleFromWorldSurfaceAsync(view, x, y, z))
+                if (UndergroundCulling && !await IsVisibleFromWorldSurfaceAsync(x, y, z))
                     continue;
                 
                 var offset = new Vector3(x - originX , y, z - originZ);
@@ -359,7 +342,7 @@ namespace MinecraftWebExporter.Export
                 // Handle water
                 if (block.WaterLevel.HasValue)
                 {
-                    var heights = await GetFluidHeights(ModelFluidType.Water, x, y, z);
+                    var heights = await GetFluidHeightsAsync(ModelFluidType.Water, x, y, z);
                     var model = Assets.ModelCache.GetFluidModel(ModelFluidType.Water, heights);
                     if (model.Faces is not null)
                     {
@@ -370,7 +353,7 @@ namespace MinecraftWebExporter.Export
                 // Handle lava
                 if (block.LavaLevel.HasValue)
                 {
-                    var heights = await GetFluidHeights(ModelFluidType.Lava, x, y, z);
+                    var heights = await GetFluidHeightsAsync(ModelFluidType.Lava, x, y, z);
                     var model = Assets.ModelCache.GetFluidModel(ModelFluidType.Lava, heights);
                     if (model.Faces is not null)
                     {
@@ -381,12 +364,12 @@ namespace MinecraftWebExporter.Export
                 // Export all faces
                 foreach (var face in faces)
                 {
-                    if (await CheckFaceCullingAsync(view, x, y, z, face))
+                    if (await CheckFaceCullingAsync(x, y, z, face))
                     {
                         continue;
                     }
 
-                    await ExportFace(x, y, z, face, offset, meshFile);
+                    await ExportFaceAsync(x, y, z, face, offset, meshFile);
                 }
             }
         }
@@ -399,13 +382,13 @@ namespace MinecraftWebExporter.Export
         /// <param name="y"></param>
         /// <param name="z"></param>
         /// <returns></returns>
-        private async ValueTask<(byte, byte, byte, byte)> GetFluidHeights(ModelFluidType fluidType, int x, int y, int z)
+        private async ValueTask<(byte, byte, byte, byte)> GetFluidHeightsAsync(ModelFluidType fluidType, int x, int y, int z)
         {
             return (
-                await GetFluidHeight(fluidType, x, y, z),
-                await GetFluidHeight(fluidType, x + 1, y, z),
-                await GetFluidHeight(fluidType, x + 1, y, z + 1),
-                await GetFluidHeight(fluidType, x, y, z + 1)
+                await GetFluidHeightAsync(fluidType, x, y, z),
+                await GetFluidHeightAsync(fluidType, x + 1, y, z),
+                await GetFluidHeightAsync(fluidType, x + 1, y, z + 1),
+                await GetFluidHeightAsync(fluidType, x, y, z + 1)
             );
         }
 
@@ -417,44 +400,44 @@ namespace MinecraftWebExporter.Export
         /// <param name="y"></param>
         /// <param name="z"></param>
         /// <returns></returns>
-        private async ValueTask<byte> GetFluidHeight(ModelFluidType fluidType, int x, int y, int z)
+        private async ValueTask<byte> GetFluidHeightAsync(ModelFluidType fluidType, int x, int y, int z)
         {
             // If there is any block above, the level is always full (8).
-            var levelNE = await m_World.GetFluidLevelAsync(fluidType, x, y + 1, z - 1);
-            var levelNW = await m_World.GetFluidLevelAsync(fluidType, x - 1, y + 1, z - 1);
-            var levelSE = await m_World.GetFluidLevelAsync(fluidType, x, y + 1, z);
-            var levelSW = await m_World.GetFluidLevelAsync(fluidType, x - 1, y + 1, z);
-            if (levelNE.HasValue || levelNW.HasValue || levelSE.HasValue || levelSW.HasValue)
+            var levelNorthEast = await World.GetFluidLevelAsync(fluidType, x, y + 1, z - 1);
+            var levelNorthWest = await World.GetFluidLevelAsync(fluidType, x - 1, y + 1, z - 1);
+            var levelSouthEast = await World.GetFluidLevelAsync(fluidType, x, y + 1, z);
+            var levelSouthWest = await World.GetFluidLevelAsync(fluidType, x - 1, y + 1, z);
+            if (levelNorthEast.HasValue || levelNorthWest.HasValue || levelSouthEast.HasValue || levelSouthWest.HasValue)
             {
                 return 8;
             }
             
-            levelNE = await m_World.GetFluidLevelAsync(fluidType, x, y, z - 1);
-            levelNW = await m_World.GetFluidLevelAsync(fluidType, x - 1, y, z - 1);
-            levelSE = await m_World.GetFluidLevelAsync(fluidType, x, y, z);
-            levelSW = await m_World.GetFluidLevelAsync(fluidType, x - 1, y, z);
+            levelNorthEast = await World.GetFluidLevelAsync(fluidType, x, y, z - 1);
+            levelNorthWest = await World.GetFluidLevelAsync(fluidType, x - 1, y, z - 1);
+            levelSouthEast = await World.GetFluidLevelAsync(fluidType, x, y, z);
+            levelSouthWest = await World.GetFluidLevelAsync(fluidType, x - 1, y, z);
             
             var count = 0;
             var max = 0;
-            if (levelNE.HasValue)
+            if (levelNorthEast.HasValue)
             {
                 count++;
-                max = Math.Max(max, GetFluidHeight(levelNE.Value));
+                max = Math.Max(max, GetFluidHeight(levelNorthEast.Value));
             }
-            if (levelNW.HasValue)
+            if (levelNorthWest.HasValue)
             {
                 count++;
-                max = Math.Max(max, GetFluidHeight(levelNW.Value));
+                max = Math.Max(max, GetFluidHeight(levelNorthWest.Value));
             }
-            if (levelSE.HasValue)
+            if (levelSouthEast.HasValue)
             {
                 count++;
-                max = Math.Max(max, GetFluidHeight(levelSE.Value));
+                max = Math.Max(max, GetFluidHeight(levelSouthEast.Value));
             }
-            if (levelSW.HasValue)
+            if (levelSouthWest.HasValue)
             {
                 count++;
-                max = Math.Max(max, GetFluidHeight(levelSW.Value));
+                max = Math.Max(max, GetFluidHeight(levelSouthWest.Value));
             }
 
             if (count == 0) return 0;
@@ -488,7 +471,7 @@ namespace MinecraftWebExporter.Export
         /// <param name="minZ"></param>
         /// <param name="maxX"></param>
         /// <param name="maxZ"></param>
-        private async Task ExportHeightmap(ExportDetailLevel view, MeshFile meshFile, int originX, int originZ, int minX, int minZ, int maxX,
+        private async Task ExportHeightmapAsync(ExportDetailLevel view, MeshFile meshFile, int originX, int originZ, int minX, int minZ, int maxX,
             int maxZ)
         {
             for (var x = minX; x < maxX; x++)
@@ -499,11 +482,11 @@ namespace MinecraftWebExporter.Export
                 var height = await GetHeightInChunkAsync(view, HeightmapType.MotionBlocking, x,  z, 0);
                 var heightNoLeaves = await GetHeightInChunkAsync(view, HeightmapType.MotionBlockingNoLeaves, x,  z, 0);
 
-                await ExportHeightmapBlock(view, meshFile, x, z, offset, HeightmapType.MotionBlockingNoLeaves);
+                await ExportHeightmapBlockAsync(view, meshFile, x, z, offset, HeightmapType.MotionBlockingNoLeaves);
 
                 if (height != heightNoLeaves)
                 {
-                    await ExportHeightmapBlock(view, meshFile, x, z, offset, HeightmapType.MotionBlocking);
+                    await ExportHeightmapBlockAsync(view, meshFile, x, z, offset, HeightmapType.MotionBlocking);
                 }
             }
         }
@@ -522,35 +505,35 @@ namespace MinecraftWebExporter.Export
         {
             var blocks = view.BlockSpan;
             
-            return await m_World.GetHeightAsync(type, x * blocks,  z * blocks, defaultValue);
+            return await World.GetHeightAsync(type, x * blocks,  z * blocks, defaultValue);
         }
 
         private async ValueTask<CachedBlockState> GetBlockInChunkAsync(ExportDetailLevel view, int x, int y, int z)
         {
             var blocks = view.BlockSpan;
             
-            return await m_World.GetBlockAsync(x * blocks, y, z * blocks);
+            return await World.GetBlockAsync(x * blocks, y, z * blocks);
         }
         
         private async ValueTask<byte> GetBlockLightInChunkAsync(ExportDetailLevel view, int x, int y, int z)
         {
             var blocks = view.BlockSpan;
             
-            return await m_World.GetBlockLightAsync(x * blocks, y, z * blocks);
+            return await World.GetBlockLightAsync(x * blocks, y, z * blocks);
         }
         
         private async ValueTask<byte> GetSkyLightInChunkAsync(ExportDetailLevel view, int x, int y, int z)
         {
             var blocks = view.BlockSpan;
             
-            return await m_World.GetSkyLightAsync(x * blocks, y, z * blocks);
+            return await World.GetSkyLightAsync(x * blocks, y, z * blocks);
         }
         
         private async ValueTask<Vector3> GetTintColorInChunkAsync(ExportDetailLevel view, int x, int y, int z, ModelTintType tintType)
         {
             var blocks = view.BlockSpan;
             
-            return await m_World.GetSmoothTintColorAsync(x * blocks + blocks / 2, y, z * blocks + blocks / 2, tintType);
+            return await World.GetSmoothTintColorAsync(x * blocks + blocks / 2, y, z * blocks + blocks / 2, tintType);
         }
 
         /// <summary>
@@ -562,18 +545,18 @@ namespace MinecraftWebExporter.Export
         /// <param name="z"></param>
         /// <param name="offset"></param>
         /// <param name="type"></param>
-        private async Task ExportHeightmapBlock(ExportDetailLevel view, MeshFile meshFile, int x, int z, Vector3 offset, HeightmapType type)
+        private async Task ExportHeightmapBlockAsync(ExportDetailLevel view, MeshFile meshFile, int x, int z, Vector3 offset, HeightmapType type)
         {
             var blocks = view.BlockSpan;
             var height = await GetHeightInChunkAsync(view, type, x,  z, 0);
-            var heightNE = await GetHeightInChunkAsync(view, type, x + 1,  z + 1, height);
-            var heightNW = await GetHeightInChunkAsync(view, type, x - 1,  z + 1, height);
-            var heightSE = await GetHeightInChunkAsync(view, type, x + 1,  z - 1, height);
-            var heightSW = await GetHeightInChunkAsync(view, type, x - 1,  z - 1, height);
-            var heightN = await GetHeightInChunkAsync(view, type, x,  z + 1, height);
-            var heightE = await GetHeightInChunkAsync(view, type, x + 1,  z, height);
-            var heightS = await GetHeightInChunkAsync(view, type, x,  z - 1, height);
-            var heightW = await GetHeightInChunkAsync(view, type, x - 1,  z, height);
+            var heightNorthEast = await GetHeightInChunkAsync(view, type, x + 1,  z + 1, height);
+            var heightNorthWest = await GetHeightInChunkAsync(view, type, x - 1,  z + 1, height);
+            var heightSouthEast = await GetHeightInChunkAsync(view, type, x + 1,  z - 1, height);
+            var heightSouthWest = await GetHeightInChunkAsync(view, type, x - 1,  z - 1, height);
+            var heightNorth = await GetHeightInChunkAsync(view, type, x,  z + 1, height);
+            var heightEast = await GetHeightInChunkAsync(view, type, x + 1,  z, height);
+            var heightSouth = await GetHeightInChunkAsync(view, type, x,  z - 1, height);
+            var heightWest = await GetHeightInChunkAsync(view, type, x - 1,  z, height);
 
             AssetIdentifier textureAsset = default;
             ModelTintType tintType = default;
@@ -631,28 +614,28 @@ namespace MinecraftWebExporter.Export
             
             geometry.Vertices.Add(new MeshVertex()
             {
-                Position = new Vector3() { X = offset.X + blocks, Y = (height + heightSE + heightS + heightE) / 4f, Z = offset.Z + 0f },
+                Position = new Vector3() { X = offset.X + blocks, Y = (height + heightSouthEast + heightSouth + heightEast) / 4f, Z = offset.Z + 0f },
                 Uv = new Vector2() { X = 0f, Y = 0f },
                 Normal = normal,
                 Color = color,
             });
             geometry.Vertices.Add(new MeshVertex()
             {
-                Position = new Vector3() { X = offset.X + 0f, Y = (height + heightSW + heightS + heightW) / 4f, Z = offset.Z + 0f },
+                Position = new Vector3() { X = offset.X + 0f, Y = (height + heightSouthWest + heightSouth + heightWest) / 4f, Z = offset.Z + 0f },
                 Uv = new Vector2() { X = 0f, Y = 1f },
                 Normal = normal,
                 Color = color,
             });
             geometry.Vertices.Add(new MeshVertex()
             {
-                Position = new Vector3() { X = offset.X + 0f, Y = (height + heightNW + heightN + heightW) / 4f, Z = offset.Z + blocks },
+                Position = new Vector3() { X = offset.X + 0f, Y = (height + heightNorthWest + heightNorth + heightWest) / 4f, Z = offset.Z + blocks },
                 Uv = new Vector2() { X = 1f, Y = 1f },
                 Normal = normal,
                 Color = color,
             });
             geometry.Vertices.Add(new MeshVertex()
             {
-                Position = new Vector3() { X = offset.X + blocks, Y = (height + heightNE + heightN + heightE) / 4f, Z = offset.Z + blocks },
+                Position = new Vector3() { X = offset.X + blocks, Y = (height + heightNorthEast + heightNorth + heightEast) / 4f, Z = offset.Z + blocks },
                 Uv = new Vector2() { X = 1f, Y = 0f },
                 Normal = normal,
                 Color = color,
@@ -676,11 +659,10 @@ namespace MinecraftWebExporter.Export
         /// <param name="face"></param>
         /// <param name="offset"></param>
         /// <param name="meshFile"></param>
-        private async Task ExportFace(int x, int y, int z, CachedBlockStateFace face, Vector3 offset, MeshFile meshFile)
+        private async Task ExportFaceAsync(int x, int y, int z, CachedBlockStateFace face, Vector3 offset, MeshFile meshFile)
         {
             // Gets the texture
             var textureAsset = face.Texture;
-            if (textureAsset.Name == null) return;
             var textureName = GetMaterialNameByAsset(textureAsset);
 
             // Creates the geometry
@@ -688,9 +670,9 @@ namespace MinecraftWebExporter.Export
             var vertexCount = geometry.Vertices.Count;
 
             GetCullDirection(face.CullFace, x, y, z, out var lx, out var ly, out var lz);
-            var tintColor = await m_World.GetSmoothTintColorAsync(x, y, z, face.TintType);
-            var blockLight = await m_World.GetBlockLightAsync(lx, ly, lz);
-            var skyLight = await m_World.GetSkyLightAsync(lx, ly, lz);
+            var tintColor = await World.GetSmoothTintColorAsync(x, y, z, face.TintType);
+            var blockLight = await World.GetBlockLightAsync(lx, ly, lz);
+            var skyLight = await World.GetSkyLightAsync(lx, ly, lz);
             var light = skyLight > blockLight ? skyLight : blockLight;
             var lightValue = light / 15f;
             var color = new Vector3() { X = tintColor.X * lightValue, Y = tintColor.Y * lightValue, Z = tintColor.Z * lightValue};
@@ -738,63 +720,31 @@ namespace MinecraftWebExporter.Export
             geometry.Triangles.Add(vertexCount + 2);
             geometry.Triangles.Add(vertexCount + 3);
         }
-        
-        
-        private async ValueTask ExportFluidBlock(int x, int y, int z, Vector3 offset, float heightNW, float heightNE, float heightSE, float heightSW, AssetIdentifier textureStillAsset, AssetIdentifier textureFlowAsset, MeshFile meshFile)
+
+        /// <summary>
+        /// Gets the timestamp from the given chunk
+        /// </summary>
+        /// <param name="view"></param>
+        /// <param name="region"></param>
+        /// <param name="chunkX"></param>
+        /// <param name="chunkZ"></param>
+        /// <returns></returns>
+        private static long GetChunkTimestamp(ExportDetailLevel view, Region region, byte chunkX, byte chunkZ)
         {
-            var textureStillName = GetMaterialNameByAsset(textureStillAsset);
+            var timestamp = 0;
 
-            // Creates the geometry
-            var geometry = meshFile.GetOrCreateGeometryByMaterial(textureStillName);
-            var vertexCount = geometry.Vertices.Count;
+            var chunks = view.ChunkSpan;
+            for (byte x = 0; x < chunks; x++)
+            for (byte z = 0; z < chunks; z++)
+            {
+                var t = region.GetChunkTimestamp((byte) (chunkX * chunks + x), (byte) (chunkZ * chunks + z));
+                if (t > timestamp)
+                    timestamp = t;
+            }
             
-            var tintColor = await m_World.GetSmoothTintColorAsync(x, y, z, ModelTintType.Water);
-            var blockLight = await m_World.GetBlockLightAsync(x, y, z);
-            var skyLight = await m_World.GetSkyLightAsync(x, y, z);
-            var light = skyLight > blockLight ? skyLight : blockLight;
-            var lightValue = light / 15f;
-            var color = new Vector3() { X = tintColor.X * lightValue, Y = tintColor.Y * lightValue, Z = tintColor.Z * lightValue};
-            
-            var normal = Vector3.AxisY;
-            
-            geometry.Vertices.Add(new MeshVertex()
-            {
-                Position = new Vector3() { X = offset.X + 1f, Y = offset.Y + heightNE, Z = offset.Z + 0f },
-                Uv = new Vector2() { X = 0f, Y = 0f },
-                Normal = normal,
-                Color = color,
-            });
-            geometry.Vertices.Add(new MeshVertex()
-            {
-                Position = new Vector3() { X = offset.X + 0f, Y = offset.Y + heightNE, Z = offset.Z + 0f },
-                Uv = new Vector2() { X = 0f, Y = 1f },
-                Normal = normal,
-                Color = color,
-            });
-            geometry.Vertices.Add(new MeshVertex()
-            {
-                Position = new Vector3() { X = offset.X + 0f, Y = offset.Y + heightNE, Z = offset.Z + 1f },
-                Uv = new Vector2() { X = 1f, Y = 1f },
-                Normal = normal,
-                Color = color,
-            });
-            geometry.Vertices.Add(new MeshVertex()
-            {
-                Position = new Vector3() { X = offset.X + 1f, Y = offset.Y + heightNE, Z = offset.Z + 1f },
-                Uv = new Vector2() { X = 1f, Y = 0f },
-                Normal = normal,
-                Color = color,
-            });
-        
-            geometry.Triangles.Add(vertexCount + 0);
-            geometry.Triangles.Add(vertexCount + 1);
-            geometry.Triangles.Add(vertexCount + 2);
-
-            geometry.Triangles.Add(vertexCount + 0);
-            geometry.Triangles.Add(vertexCount + 2);
-            geometry.Triangles.Add(vertexCount + 3);
+            return timestamp;
         }
-
+        
         #endregion Export
         
         #region Culling
@@ -827,16 +777,15 @@ namespace MinecraftWebExporter.Export
         /// The height map cache per chunk
         /// </summary>
         private readonly ConcurrentDictionary<(int, int), int[]> m_HeightmapCache = new();
-        
+
         /// <summary>
         /// Checks if the given position is invisible
         /// </summary>
-        /// <param name="view"></param>
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <param name="z"></param>
         /// <returns></returns>
-        private async ValueTask<bool> IsVisibleFromWorldSurfaceAsync(ExportDetailLevel view, int x, int y, int z)
+        private async ValueTask<bool> IsVisibleFromWorldSurfaceAsync(int x, int y, int z)
         {
             if (y >= UndergroundCullingHeight) return true;
             
@@ -877,7 +826,7 @@ namespace MinecraftWebExporter.Export
                 for (var hx = -range; hx <= range; hx++)
                 for (var hz = -range; hz <= range; hz++)
                 {
-                    var h = await m_World.GetHeightAsync(heightMapType, chunkX * 16 + x + hx, chunkZ * 16 + z + hz);
+                    var h = await World.GetHeightAsync(heightMapType, chunkX * 16 + x + hx, chunkZ * 16 + z + hz);
                     if (h < height)
                         height = h;
                 }
@@ -889,17 +838,16 @@ namespace MinecraftWebExporter.Export
             
             return heightmap;
         }
-        
+
         /// <summary>
         /// Checks if the given face at the given position is culled out.
         /// </summary>
-        /// <param name="view"></param>
         /// <param name="x"></param>
         /// <param name="y"></param>
         /// <param name="z"></param>
         /// <param name="face"></param>
         /// <returns></returns>
-        private async Task<bool> CheckFaceCullingAsync(ExportDetailLevel view, int x, int y, int z, CachedBlockStateFace face)
+        private async Task<bool> CheckFaceCullingAsync(int x, int y, int z, CachedBlockStateFace face)
         {
             // Ignore world floor
             if (face.CullFace == Direction.Down && y == -64)
@@ -915,42 +863,53 @@ namespace MinecraftWebExporter.Export
                 World.MoveInDirection(ref nextX, ref nextY, ref nextZ, direction);
                 
                 // Don't cull the edges of the world border. We want a fancy hard cut.
-                if (WorldBorderMin.HasValue && (nextX < WorldBorderMin.Value.X || nextY < WorldBorderMin.Value.Y ||
+                if (WorldBorderMin.HasValue && (nextX < WorldBorderMin.Value.X || 
+                                                nextY < WorldBorderMin.Value.Y ||
                                                 nextZ < WorldBorderMin.Value.Z))
                 {
                     return false;
                 }
-                if (WorldBorderMax.HasValue && (nextX >= WorldBorderMax.Value.X || nextY >= WorldBorderMax.Value.Y ||
+                if (WorldBorderMax.HasValue && (nextX >= WorldBorderMax.Value.X || 
+                                                nextY >= WorldBorderMax.Value.Y ||
                                                 nextZ >= WorldBorderMax.Value.Z))
                 {
                     return false;
                 }
             }
 
-            return await m_World.CheckFaceCullingAsync(x, y, z, face);
+            return await World.CheckFaceCullingAsync(x, y, z, face);
         }
         
         #endregion Culling
         
         #region Materials
 
+        private static readonly string[] MaterialPrefixes = {"block", "entity", "environment"};
+        
         /// <summary>
-        /// Returns the material name from the given texture asset
+        /// Exports the materials to <see cref="Output"/>
         /// </summary>
-        /// <param name="asset"></param>
-        /// <returns></returns>
-        private static string GetMaterialNameByAsset(AssetIdentifier asset)
+        private async Task ExportMaterialsAsync()
         {
-            return asset.Name;
-        }
+            // Writes the materials
+            Console.WriteLine("Exporting materials...");
+            foreach (var texturePrefix in MaterialPrefixes)
+            {
+                var mtlFileName = texturePrefix + ".mats";
+                var mtlFilePath = Path.Combine(Output, mtlFileName);
 
+                Console.WriteLine($"Exporting {mtlFileName}...");
+                await ExportMaterialsAsync(mtlFilePath, texturePrefix + "/");
+            }
+        }
+        
         /// <summary>
         /// Exports all textures and writes the mtl file
         /// </summary>
         /// <param name="mtlPath"></param>
         /// <param name="texturePrefix"></param>
         /// <param name="textureSubDirectory"></param>
-        private async Task<MaterialFile> ExportMaterialsAsync(string mtlPath, string texturePrefix, string textureSubDirectory = "textures")
+        private async Task ExportMaterialsAsync(string mtlPath, string texturePrefix, string textureSubDirectory = "textures")
         {
             var mtlDirectory = Path.GetDirectoryName(mtlPath);
             if (mtlDirectory == null)
@@ -1012,9 +971,68 @@ namespace MinecraftWebExporter.Export
             }
 
             await mtlFile.WriteToFileAsync(mtlPath);
-            return mtlFile;
+        }
+        
+        /// <summary>
+        /// Returns the material name from the given texture asset
+        /// </summary>
+        /// <param name="asset"></param>
+        /// <returns></returns>
+        private static string GetMaterialNameByAsset(AssetIdentifier asset)
+        {
+            return asset.Name;
         }
         
         #endregion Materials
+        
+        #region Static
+        
+        /// <summary>
+        /// The default detail level
+        /// </summary>
+        public static readonly ExportDetailLevel[] DefaultDetailLevels = {
+            new ExportDetailLevel()
+            {
+                Filename = "h0",
+                Type = ExportDetailLevelType.Heightmap,
+                BlockSpan = 1,
+                ChunkSpan = 4,
+                Distance = 100,
+            },
+            new ExportDetailLevel()
+            {
+                Filename = "h1",
+                Type = ExportDetailLevelType.Heightmap,
+                BlockSpan = 2,
+                ChunkSpan = 8,
+                Distance = 250,
+            },
+            new ExportDetailLevel()
+            {
+                Filename = "h2",
+                Type = ExportDetailLevelType.Heightmap,
+                BlockSpan = 4,
+                ChunkSpan = 16,
+                Distance = 400,
+            },
+            new ExportDetailLevel()
+            {
+                Filename = "h3",
+                Type = ExportDetailLevelType.Heightmap,
+                BlockSpan = 8,
+                ChunkSpan = 32,
+                Distance = 800,
+            },
+            new ExportDetailLevel()
+            {
+                Filename = "b",
+                Type = ExportDetailLevelType.Blocks,
+                BlockSpan = 1,
+                ChunkSpan = 2,
+                Distance = 0,
+            }
+        };
+
+        #endregion Static
     }
 }

@@ -120,6 +120,8 @@ namespace MinecraftWebExporter.Minecraft.World
             {
                 foreach (var t in heightmapsTag)
                 {
+                    if (t.Name is null) continue;
+                    
                     var heightmapType = Heightmap.GetHeightmapType(t.Name);
                     var heightmapTag = (LongArrayTag)t;
 

@@ -14,7 +14,7 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
         /// <summary>
         /// Gets and sets all variants for this block state
         /// </summary>
-        public CachedBlockStateVariant[] Variants { get; init; }
+        public CachedBlockStateVariant[]? Variants { get; init; }
 
         /// <summary>
         /// Gets the water level (0 = full - 7 = lowest, 8 = falling)
@@ -34,7 +34,7 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
         /// <summary>
         /// Gets the default variant
         /// </summary>
-        public CachedBlockStateVariant DefaultVariant => Variants[0];
+        public CachedBlockStateVariant DefaultVariant => Variants?[0] ?? default;
 
         /// <summary>
         /// The random number generator

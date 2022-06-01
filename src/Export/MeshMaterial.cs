@@ -1,6 +1,4 @@
-﻿using System.Drawing;
-
-namespace MinecraftWebExporter.Export
+﻿namespace MinecraftWebExporter.Export
 {
     /// <summary>
     /// A material definition

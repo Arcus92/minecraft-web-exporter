@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using MinecraftWebExporter.Minecraft;
 using MinecraftWebExporter.Structs;
 
 namespace MinecraftWebExporter.Wavefront

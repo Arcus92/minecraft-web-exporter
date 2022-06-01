@@ -83,7 +83,8 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                 return false;
 
             // The other block doesn't have any geometry
-            if (block.Variants.Length == 0 || block.DefaultVariant.Faces is null || block.DefaultVariant.Faces.Length == 0)
+            if (block.Variants is null || block.Variants.Length == 0 || block.DefaultVariant.Faces is null || 
+                block.DefaultVariant.Faces.Length == 0)
                 return false;
 
             var direction = CullFace.Value;

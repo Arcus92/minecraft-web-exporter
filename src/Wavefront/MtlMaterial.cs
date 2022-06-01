@@ -1,5 +1,4 @@
-﻿using MinecraftWebExporter.Minecraft;
-using MinecraftWebExporter.Structs;
+﻿using MinecraftWebExporter.Structs;
 
 namespace MinecraftWebExporter.Wavefront
 {

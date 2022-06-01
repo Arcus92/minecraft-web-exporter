@@ -260,7 +260,7 @@ namespace MinecraftWebExporter.Minecraft.World
         public async ValueTask<string?> GetBiomeAsync(int x, int y, int z)
         {
             DecomposeCoordinate(x, y, z, out var regionX, out var regionZ, out var chunkX, out var chunkY,
-                out var chunkZ, out var blockX, out var blockY, out var blockZ);
+                out var chunkZ, out var blockX, out var _, out var blockZ);
             
             var region = await GetOrLoadRegionAsync(regionX, regionZ);
             if (region is null)
@@ -293,8 +293,8 @@ namespace MinecraftWebExporter.Minecraft.World
         /// <returns></returns>
         public async ValueTask<int> GetHeightAsync(HeightmapType type, int x, int z, int defaultValue = 256)
         {
-            DecomposeCoordinate(x, 0, z, out var regionX, out var regionZ, out var chunkX, out var chunkY,
-                out var chunkZ, out var blockX, out var blockY, out var blockZ);
+            DecomposeCoordinate(x, 0, z, out var regionX, out var regionZ, out var chunkX, out var _,
+                out var chunkZ, out var blockX, out var _, out var blockZ);
             
             var region = await GetOrLoadRegionAsync(regionX, regionZ);
             if (region is null)
@@ -393,17 +393,17 @@ namespace MinecraftWebExporter.Minecraft.World
             /// <summary>
             /// The lower left color
             /// </summary>
-            public Vector3 UV00 { get; init; }
+            public Vector3 Uv00 { get; init; }
             
             /// <summary>
             /// The lower right color
             /// </summary>
-            public Vector3 UV10 { get; init; }
+            public Vector3 Uv10 { get; init; }
             
             /// <summary>
             /// The upper left color
             /// </summary>
-            public Vector3 UV01 { get; init; }
+            public Vector3 Uv01 { get; init; }
 
             /// <summary>
             /// Gets the value
@@ -419,9 +419,9 @@ namespace MinecraftWebExporter.Minecraft.World
                 
                 return new Vector3()
                 {
-                    X = x * UV00.X + y * UV10.X + z * UV01.X, 
-                    Y = x * UV00.Y + y * UV10.Y + z * UV01.Y, 
-                    Z = x * UV00.Z + y * UV10.Z + z * UV01.Z,
+                    X = x * Uv00.X + y * Uv10.X + z * Uv01.X, 
+                    Y = x * Uv00.Y + y * Uv10.Y + z * Uv01.Y, 
+                    Z = x * Uv00.Z + y * Uv10.Z + z * Uv01.Z,
                 };
             }
         }
@@ -431,9 +431,9 @@ namespace MinecraftWebExporter.Minecraft.World
         /// </summary>
         public static readonly ColorMap TintGrass = new()
         {
-            UV00 = new() {X = 191f / 255f, Y = 183f / 255f, Z = 85f / 255f},
-            UV10 = new() {X = 128f / 255f, Y = 180f / 255f, Z = 151f / 255f},
-            UV01 = new() {X = 71f / 255f, Y = 205f / 255f, Z = 51f / 255f},
+            Uv00 = new() {X = 191f / 255f, Y = 183f / 255f, Z = 85f / 255f},
+            Uv10 = new() {X = 128f / 255f, Y = 180f / 255f, Z = 151f / 255f},
+            Uv01 = new() {X = 71f / 255f, Y = 205f / 255f, Z = 51f / 255f},
         };
         
         /// <summary>
@@ -441,9 +441,9 @@ namespace MinecraftWebExporter.Minecraft.World
         /// </summary>
         public static readonly ColorMap TintFoliage = new()
         {
-            UV00 = new() {X = 174f / 255f, Y = 164f / 255f, Z = 42f / 255f},
-            UV10 = new() {X = 96f / 255f, Y = 161f / 255f, Z = 123f / 255f},
-            UV01 = new() {X = 26f / 255f, Y = 191f / 255f, Z = 0f / 255f},
+            Uv00 = new() {X = 174f / 255f, Y = 164f / 255f, Z = 42f / 255f},
+            Uv10 = new() {X = 96f / 255f, Y = 161f / 255f, Z = 123f / 255f},
+            Uv01 = new() {X = 26f / 255f, Y = 191f / 255f, Z = 0f / 255f},
         };
 
         /// <summary>
@@ -553,11 +553,6 @@ namespace MinecraftWebExporter.Minecraft.World
             if (face.FluidType == ModelFluidType.Lava && block.LavaLevel.HasValue)
             {
                 return true;
-            }
-            
-            if (block.Variants is null)
-            {
-                return false;
             }
             
             return face.IsCovered(block);

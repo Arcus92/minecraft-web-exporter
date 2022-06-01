@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
@@ -228,7 +227,8 @@ namespace MinecraftWebExporter.Minecraft.World
 
                 // Create a temporary memory stream to decrypt the data 
                 data = new byte[size - 1];
-                m_Stream.Read(data, 0, data.Length);
+                var bytes = m_Stream.Read(data, 0, data.Length);
+                if (bytes != data.Length) throw new IOException($"Chunk data is incomplete: Only {bytes} of {data.Length} could be read!");
             }
 
             await using var ms = new MemoryStream(data);
