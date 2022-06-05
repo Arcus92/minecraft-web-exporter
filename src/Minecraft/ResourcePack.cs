@@ -81,25 +81,29 @@ namespace MinecraftWebExporter.Minecraft
         public IEnumerable<AssetIdentifier> GetAssets(AssetType type, string ns)
         {
             var path = GetAssetPath(type, ns);
+            IEnumerable<ZipArchiveEntry> entries;
             lock (m_ZipArchive)
             {
-                foreach (var entry in m_ZipArchive.Entries.Where(e => e.FullName.StartsWith(path)))
-                {
-                    var name = entry.FullName.Substring(path.Length);
-                    var index = name.LastIndexOf('.');
-                    if (index >= 0)
-                    {
-                        name = name.Substring(0, index);
-                    }
-
-                    if (string.IsNullOrEmpty(name))
-                    {
-                        continue;
-                    }
-
-                    yield return new AssetIdentifier(type, ns, name);
-                }
+                entries = m_ZipArchive.Entries.Where(e => e.FullName.StartsWith(path));
             }
+
+            foreach (var entry in entries)
+            {
+                var name = entry.FullName.Substring(path.Length);
+                var index = name.LastIndexOf('.');
+                if (index >= 0)
+                {
+                    name = name.Substring(0, index);
+                }
+
+                if (string.IsNullOrEmpty(name))
+                {
+                    continue;
+                }
+
+                yield return new AssetIdentifier(type, ns, name);
+            }
+            
         }
         
         /// <summary>
