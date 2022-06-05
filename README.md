@@ -5,7 +5,7 @@ The `Minecraft Web Exporter` converts your Minecraft worlds into a format that c
 
 # Usage
 
-- Install the [.NET 5 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/5.0) for Window.
+- Install the [.NET 5 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/5.0) .
 - Download the [latest release](https://github.com/Arcus92/minecraft-web-exporter/releases) or [compile from source](#compile-from-source).
 
 The converter is a command line tool. There is no user interface and you have to use the terminal.
@@ -18,7 +18,7 @@ The converter is a command line tool. There is no user interface and you have to
   - This also mean that you have to clear the output folder manually when changing export parameter like the texture pack or world area since old chunks will remain unaffected.
 
 ```shell
-./MinecraftWebExporter.exe -m 1.18.2 -w %appdata%/.minecraft/saves/world -o C:/Users/Herobrine/Desktop/MinecratExport
+./MinecraftWebExporter -m 1.18.2 -w %appdata%/.minecraft/saves/world -o C:/Users/Herobrine/Desktop/MinecratExport
 ```
 
 ## Command line arguments
@@ -39,7 +39,7 @@ The converter is a command line tool. There is no user interface and you have to
 
 # Compiling from source
 
-You will need [.NET 5 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/5.0) for Windows.
+You will need [.NET 5 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/5.0).
 
 ```shell
 git clone https://github.com/Arcus92/minecraft-web-exporter.git
@@ -49,18 +49,20 @@ dotnet restore
 
 ## Build
 
+
 ```shell
 dotnet publish -c Release -r win-x64 --self-contained true
 ```
 
 You can find the output files in `minecraft-web-exporter/src/bin/Release/net5.0/win-x64/publish`.
 
-*Support for Linux and Mac is planned but not possible for now due to a the requirement of `System.Drawing`.*
+You can replace `win-x64` with `linux-x64` for Linux or `osx-x64` for MacOS.
 
 # Notice
 
 this project wouldn't have been possible without:
 - [SharpNBT](https://github.com/ForeverZer0/SharpNBT)
+- [ImageSharp](https://github.com/SixLabors/ImageSharp)
 
 # License
 

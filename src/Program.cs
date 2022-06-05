@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using MinecraftWebExporter.Export;
 using MinecraftWebExporter.Minecraft;
@@ -55,10 +56,29 @@ namespace MinecraftWebExporter
                             // We will try to interpret this as version number and search in the default location.
                             if (pathToMinecraft.IndexOf('/') < 0 && pathToMinecraft.IndexOf('\\') < 0)
                             {
-                                var pathToAppData =
-                                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                                pathToMinecraft = Path.Combine(pathToAppData, ".minecraft", "versions", pathToMinecraft,
-                                    $"{pathToMinecraft}.jar");
+                                var minecraftVersion = pathToMinecraft;
+                                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                                {
+                                    var pathToAppData =
+                                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                                    pathToMinecraft = Path.Combine(pathToAppData, ".minecraft");
+                                }
+                                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                                {
+                                    var pathToUserDirectory =
+                                        Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+                                    pathToMinecraft = Path.Combine(pathToUserDirectory, ".minecraft");
+                                }
+                                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                                {
+                                    var pathToUserDirectory =
+                                        Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+                                    pathToMinecraft = Path.Combine(pathToUserDirectory, "Library", "Application Support", "minecraft");
+                                }
+                                else throw new NotSupportedException("Cannot detect the Minecraft directory for your OS! Please specify the full path to the Minecraft jar file.");
+
+                                pathToMinecraft = Path.Combine(pathToMinecraft, "versions", minecraftVersion,
+                                    $"{minecraftVersion}.jar");
                             }
                         }
                         break;

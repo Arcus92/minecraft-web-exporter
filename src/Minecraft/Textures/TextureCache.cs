@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Concurrent;
-using System.Drawing;
 using System.Text.Json;
 using System.Threading.Tasks;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace MinecraftWebExporter.Minecraft.Textures
 {
@@ -54,20 +55,21 @@ namespace MinecraftWebExporter.Minecraft.Textures
             {
                 return default;
             }
-
-#pragma warning disable CA1416
+            
             // Gets the size and checks if this texture contains any semi-transparent pixels.
-            using var bitmap = new Bitmap(stream);
-            var width = bitmap.Width;
-            var height = bitmap.Height;
+            
+            using var image = Image.Load<Rgba32>(stream);
+            var width = image.Width;
+            var height = image.Height;
             
             var transparencyBits = new BitArray(width * height);
             var transparencyCutoff = false;
             var transparencySemi = false;
+            
             for (var x = 0; x < width; x++)
             for (var y = 0; y < height; y++)
             {
-                var p = bitmap.GetPixel(x, y);
+                var p = image[x, y];
                 // Some texture packs need some additional tolerance. 
                 
                 // Check for semi transparency
@@ -98,8 +100,7 @@ namespace MinecraftWebExporter.Minecraft.Textures
                 transparency = TextureTransparency.Solid;
                 transparencyBits = null;
             }
-#pragma warning restore CA1416
-            
+
             await stream.DisposeAsync();
             
             // Try to read the .mcmeta file to get animation info
