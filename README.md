@@ -5,7 +5,7 @@ The `Minecraft Web Exporter` converts your Minecraft worlds into a format that c
 
 # Usage
 
-- Install the [.NET 5 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/5.0) .
+- Install the [.NET 6 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) .
 - Download the [latest release](https://github.com/Arcus92/minecraft-web-exporter/releases) or [compile from source](#compile-from-source).
 
 The converter is a command line tool. There is no user interface and you have to use the terminal.
@@ -39,7 +39,7 @@ The converter is a command line tool. There is no user interface and you have to
 
 # Compiling from source
 
-You will need [.NET 5 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/5.0).
+You will need [.NET 6 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/6.0).
 
 ```shell
 git clone https://github.com/Arcus92/minecraft-web-exporter.git
