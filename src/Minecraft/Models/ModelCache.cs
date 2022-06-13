@@ -99,7 +99,6 @@ namespace MinecraftWebExporter.Minecraft.Models
                 Direction = Direction.Up,
                 CullFace = cull ? Direction.Up : null,
                 Texture = textureStill,
-                Uv = new Vector4(0, 0, 16f, 16f),
                 Transparent = transparent,
                 FluidType = fluidType,
                 TintType = tintType,
@@ -108,6 +107,10 @@ namespace MinecraftWebExporter.Minecraft.Models
                 VertexB = new Vector3() {X = 0f, Y = heightSouthWest, Z = 1f},
                 VertexC = new Vector3() {X = 1f, Y = heightSouthEast, Z = 1f},
                 VertexD = new Vector3() {X = 1f, Y = heightNorthEast, Z = 0f},
+                UvA = new Vector2() {X = 0f, Y = 0f},
+                UvB = new Vector2() {X = 0f, Y = 1f},
+                UvC = new Vector2() {X = 1f, Y = 1f},
+                UvD = new Vector2() {X = 1f, Y = 0f},
             };
             // Down
             faces[1] = new CachedBlockStateFace()
@@ -115,7 +118,6 @@ namespace MinecraftWebExporter.Minecraft.Models
                 Direction = Direction.Down,
                 CullFace = Direction.Down,
                 Texture = textureStill,
-                Uv = new Vector4(0, 0, 16f, 16f),
                 Transparent = transparent,
                 FluidType = fluidType,
                 TintType = tintType,
@@ -124,6 +126,10 @@ namespace MinecraftWebExporter.Minecraft.Models
                 VertexB = new Vector3() {X = 0f, Y = 0f, Z = 0f},
                 VertexC = new Vector3() {X = 1f, Y = 0f, Z = 0f},
                 VertexD = new Vector3() {X = 1f, Y = 0f, Z = 1f},
+                UvA = new Vector2() {X = 0f, Y = 1f},
+                UvB = new Vector2() {X = 0f, Y = 0f},
+                UvC = new Vector2() {X = 1f, Y = 0f},
+                UvD = new Vector2() {X = 1f, Y = 1f},
             };
             // North
             faces[2] = new CachedBlockStateFace()
@@ -131,7 +137,6 @@ namespace MinecraftWebExporter.Minecraft.Models
                 Direction = Direction.North,
                 CullFace = Direction.North,
                 Texture = textureFlow,
-                Uv = new Vector4(0, 0, 16f, 16f),
                 Transparent = transparent,
                 FluidType = fluidType,
                 TintType = tintType,
@@ -140,6 +145,10 @@ namespace MinecraftWebExporter.Minecraft.Models
                 VertexB = new Vector3() {X = 1f, Y = 0f, Z = 0f},
                 VertexC = new Vector3() {X = 0f, Y = 0f, Z = 0f},
                 VertexD = new Vector3() {X = 0f, Y = heightNorthWest, Z = 0f},
+                UvA = new Vector2() {X = 1f, Y = heightNorthEast},
+                UvB = new Vector2() {X = 1f, Y = 0f},
+                UvC = new Vector2() {X = 0f, Y = 0f},
+                UvD = new Vector2() {X = 0f, Y = heightNorthWest},
             };
             // South
             faces[3] = new CachedBlockStateFace()
@@ -147,7 +156,6 @@ namespace MinecraftWebExporter.Minecraft.Models
                 Direction = Direction.South,
                 CullFace = Direction.South,
                 Texture = textureFlow,
-                Uv = new Vector4(0, 0, 16f, 16f),
                 Transparent = transparent,
                 FluidType = fluidType,
                 TintType = tintType,
@@ -156,6 +164,10 @@ namespace MinecraftWebExporter.Minecraft.Models
                 VertexB = new Vector3() {X = 0f, Y = 0f, Z = 1f},
                 VertexC = new Vector3() {X = 1f, Y = 0f, Z = 1f},
                 VertexD = new Vector3() {X = 1f, Y = heightSouthEast, Z = 1f},
+                UvA = new Vector2() {X = 0f, Y = heightSouthWest},
+                UvB = new Vector2() {X = 0f, Y = 0f},
+                UvC = new Vector2() {X = 1f, Y = 0f},
+                UvD = new Vector2() {X = 1f, Y = heightSouthEast},
             };
             // West
             faces[4] = new CachedBlockStateFace()
@@ -163,7 +175,6 @@ namespace MinecraftWebExporter.Minecraft.Models
                 Direction = Direction.West,
                 CullFace = Direction.West,
                 Texture = textureFlow,
-                Uv = new Vector4(0, 0, 16f, 16f),
                 Transparent = transparent,
                 FluidType = fluidType,
                 TintType = tintType,
@@ -172,6 +183,10 @@ namespace MinecraftWebExporter.Minecraft.Models
                 VertexB = new Vector3() {X = 0f, Y = 0f, Z = 0f},
                 VertexC = new Vector3() {X = 0f, Y = 0f, Z = 1f},
                 VertexD = new Vector3() {X = 0f, Y = heightSouthWest, Z = 1f},
+                UvA = new Vector2() {X = 0f, Y = heightNorthWest},
+                UvB = new Vector2() {X = 0f, Y = 0f},
+                UvC = new Vector2() {X = 1f, Y = 0f},
+                UvD = new Vector2() {X = 1f, Y = heightSouthWest},
             };
             // East
             faces[5] = new CachedBlockStateFace()
@@ -179,7 +194,6 @@ namespace MinecraftWebExporter.Minecraft.Models
                 Direction = Direction.East,
                 CullFace = Direction.East,
                 Texture = textureFlow,
-                Uv = new Vector4(0, 0, 16f, 16f),
                 Transparent = transparent,
                 FluidType = fluidType,
                 TintType = tintType,
@@ -188,6 +202,10 @@ namespace MinecraftWebExporter.Minecraft.Models
                 VertexB = new Vector3() {X = 1f, Y = 0f, Z = 1f},
                 VertexC = new Vector3() {X = 1f, Y = 0f, Z = 0f},
                 VertexD = new Vector3() {X = 1f, Y = heightNorthEast, Z = 0f},
+                UvA = new Vector2() {X = 1f, Y = heightSouthEast},
+                UvB = new Vector2() {X = 1f, Y = 0f},
+                UvC = new Vector2() {X = 0f, Y = 0f},
+                UvD = new Vector2() {X = 0f, Y = heightNorthEast},
             };
             
             model = new CachedBlockStateVariant()

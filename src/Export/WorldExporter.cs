@@ -817,38 +817,32 @@ namespace MinecraftWebExporter.Export
             var light = skyLight > blockLight ? skyLight : blockLight;
             var lightValue = light / 15f;
             var color = new Vector3() { X = tintColor.X * lightValue, Y = tintColor.Y * lightValue, Z = tintColor.Z * lightValue};
-
-
-            var uvA = new Vector2() {X = face.Uv.X / 16f, Y = 1f - face.Uv.Y / 16f};
-            var uvB = new Vector2() {X = face.Uv.X / 16f, Y = 1f - face.Uv.W / 16f};
-            var uvC = new Vector2() {X = face.Uv.Z / 16f, Y = 1f - face.Uv.W / 16f};
-            var uvD = new Vector2() {X = face.Uv.Z / 16f, Y = 1f - face.Uv.Y / 16f};
-
+            
             geometry.Vertices.Add(new MeshVertex()
             {
                 Position = offset + face.VertexA,
-                Uv = uvA,
+                Uv = face.UvA,
                 Normal = face.Normal,
                 Color = color,
             });
             geometry.Vertices.Add(new MeshVertex()
             {
                 Position = offset + face.VertexB,
-                Uv = uvB,
+                Uv = face.UvB,
                 Normal = face.Normal,
                 Color = color,
             });
             geometry.Vertices.Add(new MeshVertex()
             {
                 Position = offset + face.VertexC,
-                Uv = uvC,
+                Uv = face.UvC,
                 Normal = face.Normal,
                 Color = color,
             });
             geometry.Vertices.Add(new MeshVertex()
             {
                 Position = offset + face.VertexD,
-                Uv = uvD,
+                Uv = face.UvD,
                 Normal = face.Normal,
                 Color = color,
             });

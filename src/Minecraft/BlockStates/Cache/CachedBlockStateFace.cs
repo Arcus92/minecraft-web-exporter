@@ -31,9 +31,24 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
         public Vector3 VertexD { get; init; }
 
         /// <summary>
-        /// Gets the uv
+        /// Gets the uv a
         /// </summary>
-        public Vector4 Uv { get; init; }
+        public Vector2 UvA { get; init; }
+        
+        /// <summary>
+        /// Gets the uv a
+        /// </summary>
+        public Vector2 UvB { get; init; }
+        
+        /// <summary>
+        /// Gets the uv a
+        /// </summary>
+        public Vector2 UvC { get; init; }
+        
+        /// <summary>
+        /// Gets the uv a
+        /// </summary>
+        public Vector2 UvD { get; init; }
         
         /// <summary>
         /// Gets the normal of the face
@@ -394,7 +409,7 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                         break;
                 }
             }
-
+            
             return new CachedBlockStateFace()
             {
                 Direction = face.Direction,
@@ -406,7 +421,10 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                 VertexB = face.VertexB,
                 VertexC = face.VertexC,
                 VertexD = face.VertexD,
-                Uv = face.Uv,
+                UvA = new Vector2() {X = face.Uv.X / 16f, Y = 1f - face.Uv.Y / 16f},
+                UvB = new Vector2() {X = face.Uv.X / 16f, Y = 1f - face.Uv.W / 16f},
+                UvC = new Vector2() {X = face.Uv.Z / 16f, Y = 1f - face.Uv.W / 16f},
+                UvD = new Vector2() {X = face.Uv.Z / 16f, Y = 1f - face.Uv.Y / 16f},
                 TintType = tintType,
             };
         }
@@ -448,9 +466,12 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
             var vertexB = face.VertexB;
             var vertexC = face.VertexC;
             var vertexD = face.VertexD;
-
-            var uv = face.Uv;
-
+            
+            var uvA = face.UvA;
+            var uvB = face.UvB;
+            var uvC = face.UvC;
+            var uvD = face.UvD;
+            
             // Rotate X
             switch (x)
             {
@@ -475,18 +496,6 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                         case Direction.Down: 
                             cullFace = Direction.South;
                             break;
-                    }
-                    // Lock uv
-                    if (uvLock && direction is Direction.East or Direction.West)
-                    {
-                        (vertexA, vertexB, vertexC, vertexD) = (vertexB, vertexC, vertexD, vertexA);
-                        uv = new Vector4()
-                        {
-                            X = uv.Y,
-                            Y = uv.Z,
-                            Z = uv.W,
-                            W = uv.X,
-                        };
                     }
                     break;
                 
@@ -513,9 +522,12 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                             break;
                     }
                     // Lock uv
-                    if (uvLock && direction is Direction.East or Direction.West)
+                    if (uvLock && direction is Direction.East or Direction.West or Direction.North or Direction.South)
                     {
-                        (vertexA, vertexB, vertexC, vertexD) = (vertexC, vertexD, vertexA, vertexB);
+                        uvA = new Vector2() { X = 1 - uvA.X, Y = 1 - uvA.Y };
+                        uvB = new Vector2() { X = 1 - uvB.X, Y = 1 - uvB.Y };
+                        uvC = new Vector2() { X = 1 - uvC.X, Y = 1 - uvC.Y };
+                        uvD = new Vector2() { X = 1 - uvD.X, Y = 1 - uvD.Y };
                     }
                     break;
                 
@@ -540,18 +552,6 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                         case Direction.Down: 
                             cullFace = Direction.North;
                             break;
-                    }
-                    // Lock uv
-                    if (uvLock && direction is Direction.East or Direction.West)
-                    {
-                        (vertexA, vertexB, vertexC, vertexD) = (vertexD, vertexA, vertexB, vertexC);
-                        uv = new Vector4()
-                        {
-                            X = uv.Y,
-                            Y = uv.Z,
-                            Z = uv.W,
-                            W = uv.X,
-                        };
                     }
                     break;
             }
@@ -585,14 +585,11 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                     // Lock uv
                     if (uvLock && direction is Direction.Up or Direction.Down)
                     {
-                        (vertexA, vertexB, vertexC, vertexD) = (vertexB, vertexC, vertexD, vertexA);
-                        uv = new Vector4()
-                        {
-                            X = uv.Y,
-                            Y = uv.Z,
-                            Z = uv.W,
-                            W = uv.X,
-                        };
+                        // 1
+                        uvA = new Vector2() { X = uvA.Y, Y = 1 - uvA.X };
+                        uvB = new Vector2() { X = uvB.Y, Y = 1 - uvB.X };
+                        uvC = new Vector2() { X = uvC.Y, Y = 1 - uvC.X };
+                        uvD = new Vector2() { X = uvD.Y, Y = 1 - uvD.X };
                     }
                     
                     break;
@@ -623,7 +620,11 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                     // Lock uv
                     if (uvLock && direction is Direction.Up or Direction.Down)
                     {
-                        (vertexA, vertexB, vertexC, vertexD) = (vertexC, vertexD, vertexA, vertexB);
+                        // 4
+                        uvA = new Vector2() { X = 1 - uvA.X, Y = 1 - uvA.Y };
+                        uvB = new Vector2() { X = 1 - uvB.X, Y = 1 - uvB.Y };
+                        uvC = new Vector2() { X = 1 - uvC.X, Y = 1 - uvC.Y };
+                        uvD = new Vector2() { X = 1 - uvD.X, Y = 1 - uvD.Y };
                     }
                     
                     break;
@@ -654,14 +655,11 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                     // Lock uv
                     if (uvLock && direction is Direction.Up or Direction.Down)
                     {
-                        (vertexA, vertexB, vertexC, vertexD) = (vertexD, vertexA, vertexB, vertexC);
-                        uv = new Vector4()
-                        {
-                            X = uv.Y,
-                            Y = uv.Z,
-                            Z = uv.W,
-                            W = uv.X,
-                        };
+                        // 3
+                        uvA = new Vector2() { X = 1 - uvA.Y, Y = uvA.X };
+                        uvB = new Vector2() { X = 1 - uvB.Y, Y = uvB.X };
+                        uvC = new Vector2() { X = 1 - uvC.Y, Y = uvC.X };
+                        uvD = new Vector2() { X = 1 - uvD.Y, Y = uvD.X };
                     }
                     
                     break;
@@ -683,7 +681,10 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                 VertexC = vertexC,
                 VertexD = vertexD,
                 
-                Uv = uv,
+                UvA = uvA,
+                UvB = uvB,
+                UvC = uvC,
+                UvD = uvD,
             };
         }
         
