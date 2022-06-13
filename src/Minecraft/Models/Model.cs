@@ -50,7 +50,7 @@ namespace MinecraftWebExporter.Minecraft.Models
                 return this;
             }
 
-            var parent = await assets.GetModel(new AssetIdentifier(AssetType.Model, Parent));
+            var parent = await assets.GetModelAsync(new AssetIdentifier(AssetType.Model, Parent));
             if (parent is null)
             {
                 return this;

@@ -21,7 +21,7 @@ namespace MinecraftWebExporter.Minecraft.Models.Cache
         /// <param name="assetManager"></param>
         /// <param name="model"></param>
         /// <returns></returns>
-        public static async ValueTask<CachedModel> CreateAsync(AssetManager assetManager, Model? model)
+        public static async ValueTask<CachedModel> CreateAsync(IAssetManager assetManager, Model? model)
         {
             if (model?.Elements is null || model.Textures is null)
             {
@@ -39,7 +39,7 @@ namespace MinecraftWebExporter.Minecraft.Models.Cache
                 Faces = faces.ToArray(),
             };
         }
-
+        
         #endregion Static
     }
 }

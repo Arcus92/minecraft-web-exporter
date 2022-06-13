@@ -24,9 +24,9 @@ namespace MinecraftWebExporter.Export
         #region Parameter
 
         /// <summary>
-        /// Get and sets the minecraft asset manager
+        /// Get the minecraft asset manager
         /// </summary>
-        public AssetManager Assets { get; }
+        public IAssetManager Assets { get; }
 
         /// <summary>
         /// Gets and sets the world to export
@@ -1064,7 +1064,7 @@ namespace MinecraftWebExporter.Export
                     continue;
                 
                 // Gets the material
-                var textureInfo = await Assets.TextureCache.GetAsync(textureAsset);
+                var textureInfo = await Assets.GetTextureAsync(textureAsset);
 
                 // Gets the name
                 var name = GetMaterialNameByAsset(textureAsset);

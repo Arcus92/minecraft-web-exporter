@@ -2,7 +2,6 @@
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using MinecraftWebExporter.Minecraft.BlockStates.Cache;
-using SharpNBT;
 
 namespace MinecraftWebExporter.Minecraft.BlockStates
 {
@@ -27,14 +26,14 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
         /// <summary>
         /// Checks if the when condition is met
         /// </summary>
-        /// <param name="propertiesTag"></param>
+        /// <param name="properties"></param>
         /// <returns></returns>
-        private bool CheckWhen(CompoundTag? propertiesTag)
+        private bool CheckWhen(IBlockStateProperties? properties)
         {
             if (When is null)
                 return true;
             
-            return When.Check(propertiesTag);
+            return When.Check(properties);
         }
         
         /// <summary>
@@ -43,14 +42,14 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
         /// <param name="asset"></param>
         /// <param name="faces"></param>
         /// <param name="assetManager"></param>
-        /// <param name="propertiesTag"></param>
+        /// <param name="properties"></param>
         /// <returns></returns>
-        public async ValueTask BuildCachedFacesAsync(AssetIdentifier asset, List<CachedBlockStateFace> faces, AssetManager assetManager, CompoundTag? propertiesTag)
+        public async ValueTask BuildCachedFacesAsync(AssetIdentifier asset, List<CachedBlockStateFace> faces, IAssetManager assetManager, IBlockStateProperties? properties)
         {
             // Build the variant
             if (Apply is not null)
             {
-                if (CheckWhen(propertiesTag))
+                if (CheckWhen(properties))
                 {
                     await Apply[0].BuildCachedFacesAsync(asset, faces, assetManager);
                 }

@@ -145,7 +145,7 @@ namespace MinecraftWebExporter.Minecraft.Models.Cache
         /// <param name="direction"></param>
         /// <param name="face"></param>
         /// <returns></returns>
-        public static async ValueTask<CachedModelFace> CreateAsync(AssetManager assetManager, Model model, ModelElement element, 
+        public static async ValueTask<CachedModelFace> CreateAsync(IAssetManager assetManager, Model model, ModelElement element, 
             Direction direction, ModelElementFace face)
         {
             Vector4 uv;
@@ -178,7 +178,7 @@ namespace MinecraftWebExporter.Minecraft.Models.Cache
             }
 
             var textureAsset = model.Textures?.Get(face.Texture) ?? default;
-            var texture = await assetManager.TextureCache.GetAsync(textureAsset);
+            var texture = await assetManager.GetTextureAsync(textureAsset);
             var transparent = texture.IsAreaTransparent(uv);
 
             Vector3 vertexA, vertexB, vertexC, vertexD, normal;
@@ -275,7 +275,7 @@ namespace MinecraftWebExporter.Minecraft.Models.Cache
         /// <param name="element"></param>
         /// <param name="list"></param>
         /// <returns></returns>
-        public static async ValueTask CreateFacesAsync(AssetManager assetManager, Model model, ModelElement element, List<CachedModelFace> list)
+        public static async ValueTask CreateFacesAsync(IAssetManager assetManager, Model model, ModelElement element, List<CachedModelFace> list)
         {
             if (element.Faces is null)
                 return;

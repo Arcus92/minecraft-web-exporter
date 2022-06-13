@@ -17,7 +17,7 @@ namespace MinecraftWebExporter.Minecraft.Models
         /// Creates the model cache
         /// </summary>
         /// <param name="assetManager"></param>
-        public ModelCache(AssetManager assetManager)
+        public ModelCache(IAssetManager assetManager)
         {
             m_AssetManager = assetManager;
         }
@@ -25,7 +25,7 @@ namespace MinecraftWebExporter.Minecraft.Models
         /// <summary>
         /// The asset manager
         /// </summary>
-        private readonly AssetManager m_AssetManager;
+        private readonly IAssetManager m_AssetManager;
         
         /// <summary>
         /// The model cache
@@ -50,7 +50,7 @@ namespace MinecraftWebExporter.Minecraft.Models
                 return cachedModel;
             }
 
-            var model = await m_AssetManager.GetModel(asset);
+            var model = await m_AssetManager.GetModelAsync(asset);
             cachedModel = await CachedModel.CreateAsync(m_AssetManager, model);
             
             m_Cache.TryAdd(asset, cachedModel);

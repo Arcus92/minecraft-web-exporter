@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using MinecraftWebExporter.Minecraft.BlockStates;
 using MinecraftWebExporter.Minecraft.BlockStates.Cache;
 using SharpNBT;
 
@@ -303,19 +304,19 @@ namespace MinecraftWebExporter.Minecraft.World
                 return default;
             var blockPropertiesTag = blockData["Properties"] as CompoundTag;
             var blockName = blockNameTag.Value;
-            
-            return await GetBlockAsync(blockName, blockPropertiesTag);
+            var properties = IBlockStateProperties.Create(blockPropertiesTag);
+            return await GetBlockAsync(blockName, properties);
         }
         
         /// <summary>
         /// Gets the block model.
         /// </summary>
         /// <param name="blockName"></param>
-        /// <param name="blockPropertiesTag"></param>
+        /// <param name="properties"></param>
         /// <returns></returns>
-        private async ValueTask<CachedBlockState> GetBlockAsync(string blockName, CompoundTag? blockPropertiesTag = null)
+        private async ValueTask<CachedBlockState> GetBlockAsync(string blockName, IBlockStateProperties? properties = null)
         {
-            return await CachedBlockState.CreateAsync(Chunk.Region.World.Assets, blockName, blockPropertiesTag);
+            return await CachedBlockState.CreateAsync(Chunk.Region.World.Assets, blockName, properties);
         }
         
         /// <summary>

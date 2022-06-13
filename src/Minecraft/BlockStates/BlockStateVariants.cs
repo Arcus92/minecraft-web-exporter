@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using SharpNBT;
 
 namespace MinecraftWebExporter.Minecraft.BlockStates
 {
@@ -16,9 +15,9 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
         /// <summary>
         /// Returns all model variants by the given properties
         /// </summary>
-        /// <param name="propertiesTag"></param>
+        /// <param name="properties"></param>
         /// <returns></returns>
-        public BlockStateVariant[] GetVariantsByProperties(CompoundTag? propertiesTag)
+        public BlockStateVariant[] GetVariantsByProperties(IBlockStateProperties? properties)
         {
             foreach (var pair in this)
             {
@@ -32,9 +31,8 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
                     
                     var name = pair.Key.Substring(pos, equal - pos);
                     var value = pair.Key.Substring(equal + 1, end - equal - 1);
-
-                    var tag = propertiesTag?[name] as StringTag;
-                    var tagValue = tag?.Value;
+                    
+                    var tagValue = properties?.GetValueOrDefault(name);
                     if (value != tagValue)
                     {
                         success = false;

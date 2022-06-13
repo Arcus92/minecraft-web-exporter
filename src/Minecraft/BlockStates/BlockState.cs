@@ -2,7 +2,6 @@
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using MinecraftWebExporter.Minecraft.BlockStates.Cache;
-using SharpNBT;
 
 namespace MinecraftWebExporter.Minecraft.BlockStates
 {
@@ -29,14 +28,14 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
         /// <param name="asset"></param>
         /// <param name="variants"></param>
         /// <param name="assetManager"></param>
-        /// <param name="propertiesTag"></param>
-        public async ValueTask BuildCachedFacesAsync(AssetIdentifier asset, List<CachedBlockStateVariant> variants, AssetManager assetManager, CompoundTag? propertiesTag)
+        /// <param name="properties"></param>
+        public async ValueTask BuildCachedFacesAsync(AssetIdentifier asset, List<CachedBlockStateVariant> variants, IAssetManager assetManager, IBlockStateProperties? properties)
         {
             // Build the variant
             if (Variants is not null)
             {
                 var faces = new List<CachedBlockStateFace>();
-                foreach (var variant in Variants.GetVariantsByProperties(propertiesTag))
+                foreach (var variant in Variants.GetVariantsByProperties(properties))
                 {
                     faces.Clear();
                     await variant.BuildCachedFacesAsync(asset, faces, assetManager);
@@ -54,7 +53,7 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
                 var faces = new List<CachedBlockStateFace>();
                 foreach (var multipart in Multipart)
                 {
-                    await multipart.BuildCachedFacesAsync(asset, faces, assetManager, propertiesTag);
+                    await multipart.BuildCachedFacesAsync(asset, faces, assetManager, properties);
                 }
                 variants.Add(new CachedBlockStateVariant()
                 {

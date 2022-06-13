@@ -47,11 +47,11 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
         /// <param name="faces"></param>
         /// <param name="assetManager"></param>
         /// <returns></returns>
-        public async ValueTask BuildCachedFacesAsync(AssetIdentifier block, List<CachedBlockStateFace> faces, AssetManager assetManager)
+        public async ValueTask BuildCachedFacesAsync(AssetIdentifier block, List<CachedBlockStateFace> faces, IAssetManager assetManager)
         {
             // Loads the actual model
             var asset = new AssetIdentifier(AssetType.Model, Model);
-            var model = await assetManager.ModelCache.GetAsync(asset);
+            var model = await assetManager.GetCachedModelAsync(asset);
             if (model.Faces is null)
                 return;
             

@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using SharpNBT;
 
 namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
 {
@@ -71,15 +71,16 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
         /// </summary>
         /// <param name="assetManager"></param>
         /// <param name="blockName"></param>
-        /// <param name="propertiesTag"></param>
+        /// <param name="properties"></param>
         /// <returns></returns>
-        public static async ValueTask<CachedBlockState> CreateAsync(AssetManager assetManager, string blockName, CompoundTag? propertiesTag)
+        public static async ValueTask<CachedBlockState> CreateAsync(IAssetManager assetManager, string blockName, IBlockStateProperties? properties)
         {
             var blockStateAsset = new AssetIdentifier(AssetType.BlockState, blockName);
-            var blockState = await assetManager.BlockStateCache.GetAsync(blockStateAsset);
+            var blockState = await assetManager.GetBlockStateAsync(blockStateAsset);
             if (blockState is null)
                 return default;
-            
+
+            string? levelText;
             byte? waterLevel = default;
             byte? lavaLevel = default;
             
@@ -87,17 +88,17 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
 
             if (blockStateAsset.Name is "water")
             {
-                if (propertiesTag?["level"] is StringTag levelTag)
+                if ((levelText = properties?.GetValueOrDefault("level")) is not null)
                 {
-                    waterLevel = byte.Parse(levelTag.Value);
+                    waterLevel = byte.Parse(levelText);
                 }
             }
 
             if (blockStateAsset.Name is "lava")
             {
-                if (propertiesTag?["level"] is StringTag levelTag)
+                if ((levelText = properties?.GetValueOrDefault("level")) is not null)
                 {
-                    lavaLevel = byte.Parse(levelTag.Value);
+                    lavaLevel = byte.Parse(levelText);
                 }
             }
             
@@ -107,13 +108,13 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
             }
             
             // Handle water logged objects
-            if ((propertiesTag?["waterlogged"] as StringTag)?.Value == "true")
+            if (properties?.GetValueOrDefault("waterlogged") == "true")
             {
                 waterLevel = 0;
             }
             
             var variants = new List<CachedBlockStateVariant>();
-            await blockState.BuildCachedFacesAsync(blockStateAsset, variants, assetManager, propertiesTag);
+            await blockState.BuildCachedFacesAsync(blockStateAsset, variants, assetManager, properties);
             
             return new CachedBlockState()
             {
@@ -131,7 +132,7 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
         /// <param name="blockId"></param>
         /// <param name="blockData"></param>
         /// <returns></returns>
-        public static async ValueTask<CachedBlockState> CreateAsync(AssetManager assetManager, byte blockId, byte blockData)
+        public static async ValueTask<CachedBlockState> CreateAsync(IAssetManager assetManager, byte blockId, byte blockData)
         {
             ConvertBlockIdToBlockName(blockId, blockData, out var blockName, out var propertiesTag);
             var block = await CreateAsync(assetManager, blockName, propertiesTag);
@@ -151,11 +152,11 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
         /// <param name="blockId"></param>
         /// <param name="blockData"></param>
         /// <param name="blockName"></param>
-        /// <param name="propertiesTag"></param>
+        /// <param name="properties"></param>
         private static void ConvertBlockIdToBlockName(byte blockId, byte blockData, out string blockName,
-            out CompoundTag? propertiesTag)
+            out IBlockStateProperties? properties)
         {
-            propertiesTag = null;
+            properties = null;
             blockName = BlockIdMap.LegacyBlockIdToBlockName[blockId];
 
             // Converts the legacy block name with subtype to the modern block name
@@ -172,33 +173,45 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
             {
                 case "minecraft:grass":
                     GetBlockNameFromSubtype(ref blockName, blockData);
-                    propertiesTag = new CompoundTag("data");
-                    propertiesTag.Add(new StringTag("snowy", "false"));
+                    properties = IBlockStateProperties.Create(new Dictionary<string, string>()
+                    {
+                        {
+                            "snowy", "false"
+                        }
+                    });
                     break;
                 case "minecraft:water" or "minecraft:lava":
-                    propertiesTag = new CompoundTag("data");
-                    propertiesTag.Add(new StringTag("level", "0"));
+                    properties = IBlockStateProperties.Create(new Dictionary<string, string>()
+                    {
+                        {
+                            "level", "0"
+                        }
+                    });
                     break;
                 case "minecraft:flowing_water" or "minecraft:flowing_lava":
-                    propertiesTag = new CompoundTag("data");
-                    propertiesTag.Add(new StringTag("level", blockData.ToString()));
+                    properties = IBlockStateProperties.Create(new Dictionary<string, string>()
+                    {
+                        {
+                            "level", blockData.ToString()
+                        }
+                    });
                     break;
                 case "minecraft:log" or "minecraft:log2":
-                    propertiesTag = new CompoundTag("data");
-                    
                     GetBlockNameFromSubtype(ref blockName, blockData & 0b0011);
-                    switch (blockData >> 2)
+                    var axis = (blockData >> 2) switch
                     {
-                        case 0:
-                            propertiesTag.Add(new StringTag("axis", "y"));
-                            break;
-                        case 1:
-                            propertiesTag.Add(new StringTag("axis", "x"));
-                            break;
-                        case 2:
-                            propertiesTag.Add(new StringTag("axis", "z"));
-                            break;
-                    }
+                        0 => "y",
+                        1 => "x",
+                        2 => "z",
+                        _ => throw new InvalidDataException("Unknown axis!")
+                    };
+
+                    properties = IBlockStateProperties.Create(new Dictionary<string, string>()
+                    {
+                        {
+                            "axis", axis
+                        }
+                    });
                     break;
                 case "minecraft:leaves" or "minecraft:leaves2" or "minecraft:sapling":
                     GetBlockNameFromSubtype(ref blockName, blockData & 0b0111);
@@ -206,8 +219,12 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                 case "minecraft:double_plant" or "minecraft:tallgrass":
                     GetBlockNameFromSubtype(ref blockName, blockData & 0b0111);
                     var upper = (blockData & 0b1000) != 0;
-                    propertiesTag = new CompoundTag("data");
-                    propertiesTag.Add(new StringTag("half", upper ? "upper" : "lower"));
+                    properties = IBlockStateProperties.Create(new Dictionary<string, string>()
+                    {
+                        {
+                            "half", upper ? "upper" : "lower"
+                        }
+                    });
                     break;
                 
                 default:

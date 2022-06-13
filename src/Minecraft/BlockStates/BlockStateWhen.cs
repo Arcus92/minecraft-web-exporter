@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using SharpNBT;
 
 namespace MinecraftWebExporter.Minecraft.BlockStates
 {
@@ -20,9 +19,9 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
         /// <summary>
         /// Checks if the when condition is met
         /// </summary>
-        /// <param name="propertiesTag"></param>
+        /// <param name="properties"></param>
         /// <returns></returns>
-        public bool Check(CompoundTag? propertiesTag)
+        public bool Check(IBlockStateProperties? properties)
         {
             // No checks
             if (Count == 0)
@@ -35,8 +34,7 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
                 var allPropertiesMatched = true;
                 foreach (var pair in when)
                 {
-                    var tag = propertiesTag?[pair.Key] as StringTag;
-                    var value = tag?.Value;
+                    var value = properties?.GetValueOrDefault(pair.Key);
 
                     // The block definition can define multiple values seperated by an 'or' / '|'.
                     // At least one value must match the property.
