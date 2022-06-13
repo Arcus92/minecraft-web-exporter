@@ -482,21 +482,22 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                     vertexD = new Vector3() { X = vertexD.X, Y = vertexD.Z, Z = 1 - vertexD.Y };
                     normal = new Vector3() { X = normal.X, Y = normal.Z, Z = -normal.Y };
 
-                    switch (cullFace)
+                    cullFace = cullFace switch
                     {
-                        case Direction.North: 
-                            cullFace = Direction.Down;
-                            break;
-                        case Direction.Up: 
-                            cullFace = Direction.North;
-                            break;
-                        case Direction.South: 
-                            cullFace = Direction.Up;
-                            break;
-                        case Direction.Down: 
-                            cullFace = Direction.South;
-                            break;
-                    }
+                        Direction.North => Direction.Down,
+                        Direction.Up => Direction.North,
+                        Direction.South => Direction.Up,
+                        Direction.Down => Direction.South,
+                        _ => cullFace
+                    };
+                    direction = direction switch
+                    {
+                        Direction.North => Direction.Down,
+                        Direction.Up => Direction.North,
+                        Direction.South => Direction.Up,
+                        Direction.Down => Direction.South,
+                        _ => direction
+                    };
                     break;
                 
                 case 2: // 180°
@@ -506,29 +507,33 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                     vertexD = new Vector3() { X = vertexD.X, Y = 1 - vertexD.Y, Z = 1 - vertexD.Z };
                     normal = new Vector3() { X = normal.X, Y = -normal.Y, Z = -normal.Z };
 
-                    switch (cullFace)
-                    {
-                        case Direction.North: 
-                            cullFace = Direction.South;
-                            break;
-                        case Direction.Up: 
-                            cullFace = Direction.Down;
-                            break;
-                        case Direction.South: 
-                            cullFace = Direction.North;
-                            break;
-                        case Direction.Down: 
-                            cullFace = Direction.Up;
-                            break;
-                    }
                     // Lock uv
                     if (uvLock && direction is Direction.East or Direction.West or Direction.North or Direction.South)
                     {
-                        uvA = new Vector2() { X = 1 - uvA.X, Y = 1 - uvA.Y };
-                        uvB = new Vector2() { X = 1 - uvB.X, Y = 1 - uvB.Y };
-                        uvC = new Vector2() { X = 1 - uvC.X, Y = 1 - uvC.Y };
-                        uvD = new Vector2() { X = 1 - uvD.X, Y = 1 - uvD.Y };
+                        uvA = new Vector2() {X = 1 - uvA.X, Y = 1 - uvA.Y};
+                        uvB = new Vector2() {X = 1 - uvB.X, Y = 1 - uvB.Y};
+                        uvC = new Vector2() {X = 1 - uvC.X, Y = 1 - uvC.Y};
+                        uvD = new Vector2() {X = 1 - uvD.X, Y = 1 - uvD.Y};
                     }
+
+                    cullFace = cullFace switch
+                    {
+                        Direction.North => Direction.South,
+                        Direction.Up => Direction.Down,
+                        Direction.South => Direction.North,
+                        Direction.Down => Direction.Up,
+                        _ => cullFace
+                    };
+                    direction = direction switch
+                    {
+                        Direction.North => Direction.South,
+                        Direction.Up => Direction.Down,
+                        Direction.South => Direction.North,
+                        Direction.Down => Direction.Up,
+                        _ => direction
+                    };
+                    
+                    
                     break;
                 
                 case 3: // 270°
@@ -538,21 +543,22 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                     vertexD = new Vector3() { X = vertexD.X, Y = 1 - vertexD.Z, Z = vertexD.Y };
                     normal = new Vector3() { X = normal.X, Y = -normal.Z, Z = normal.Y };
 
-                    switch (cullFace)
+                    cullFace = cullFace switch
                     {
-                        case Direction.North: 
-                            cullFace = Direction.Up;
-                            break;
-                        case Direction.Up: 
-                            cullFace = Direction.South;
-                            break;
-                        case Direction.South: 
-                            cullFace = Direction.Down;
-                            break;
-                        case Direction.Down: 
-                            cullFace = Direction.North;
-                            break;
-                    }
+                        Direction.North => Direction.Up,
+                        Direction.Up => Direction.South,
+                        Direction.South => Direction.Down,
+                        Direction.Down => Direction.North,
+                        _ => cullFace
+                    };
+                    direction = direction switch
+                    {
+                        Direction.North => Direction.Up,
+                        Direction.Up => Direction.South,
+                        Direction.South => Direction.Down,
+                        Direction.Down => Direction.North,
+                        _ => direction
+                    };
                     break;
             }
             
@@ -565,33 +571,45 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                     vertexC = new Vector3() { X = 1 - vertexC.Z, Y = vertexC.Y, Z = vertexC.X };
                     vertexD = new Vector3() { X = 1 - vertexD.Z, Y = vertexD.Y, Z = vertexD.X };
                     normal = new Vector3() { X = -normal.Z, Y = normal.Y, Z = normal.X };
-                    
-                    switch (cullFace)
-                    {
-                        case Direction.North: 
-                            cullFace = Direction.East;
-                            break;
-                        case Direction.East: 
-                            cullFace = Direction.South;
-                            break;
-                        case Direction.South: 
-                            cullFace = Direction.West;
-                            break;
-                        case Direction.West: 
-                            cullFace = Direction.North;
-                            break;
-                    }
-                    
+
                     // Lock uv
-                    if (uvLock && direction is Direction.Up or Direction.Down)
+                    if (uvLock && face.Direction is Direction.Up or Direction.Down)
                     {
-                        // 1
-                        uvA = new Vector2() { X = uvA.Y, Y = 1 - uvA.X };
-                        uvB = new Vector2() { X = uvB.Y, Y = 1 - uvB.X };
-                        uvC = new Vector2() { X = uvC.Y, Y = 1 - uvC.X };
-                        uvD = new Vector2() { X = uvD.Y, Y = 1 - uvD.X };
+                        // I really don't know why we have to rotate the down-side in the opposite direction, but
+                        // this fixes the UV issues.
+                        if (direction is Direction.Down)
+                        {
+                            uvA = new Vector2() { X = 1 - uvA.Y, Y = uvA.X };
+                            uvB = new Vector2() { X = 1 - uvB.Y, Y = uvB.X };
+                            uvC = new Vector2() { X = 1 - uvC.Y, Y = uvC.X };
+                            uvD = new Vector2() { X = 1 - uvD.Y, Y = uvD.X };
+                        }
+                        else
+                        {
+                            uvA = new Vector2() {X = uvA.Y, Y = 1 - uvA.X};
+                            uvB = new Vector2() {X = uvB.Y, Y = 1 - uvB.X};
+                            uvC = new Vector2() {X = uvC.Y, Y = 1 - uvC.X};
+                            uvD = new Vector2() {X = uvD.Y, Y = 1 - uvD.X};
+                        }
                     }
                     
+                    cullFace = cullFace switch
+                    {
+                        Direction.North => Direction.East,
+                        Direction.East => Direction.South,
+                        Direction.South => Direction.West,
+                        Direction.West => Direction.North,
+                        _ => cullFace
+                    };
+                    direction = direction switch
+                    {
+                        Direction.North => Direction.East,
+                        Direction.East => Direction.South,
+                        Direction.South => Direction.West,
+                        Direction.West => Direction.North,
+                        _ => direction
+                    };
+
                     break;
                 
                 case 2: // 180°
@@ -601,31 +619,31 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                     vertexD = new Vector3() { X = 1 - vertexD.X, Y = vertexD.Y, Z = 1 - vertexD.Z };
                     normal = new Vector3() { X = -normal.X, Y = normal.Y, Z = -normal.Z };
 
-                    switch (cullFace)
-                    {
-                        case Direction.North: 
-                            cullFace = Direction.South;
-                            break;
-                        case Direction.East: 
-                            cullFace = Direction.West;
-                            break;
-                        case Direction.South: 
-                            cullFace = Direction.North;
-                            break;
-                        case Direction.West: 
-                            cullFace = Direction.East;
-                            break;
-                    }
-                    
                     // Lock uv
                     if (uvLock && direction is Direction.Up or Direction.Down)
                     {
-                        // 4
-                        uvA = new Vector2() { X = 1 - uvA.X, Y = 1 - uvA.Y };
-                        uvB = new Vector2() { X = 1 - uvB.X, Y = 1 - uvB.Y };
-                        uvC = new Vector2() { X = 1 - uvC.X, Y = 1 - uvC.Y };
-                        uvD = new Vector2() { X = 1 - uvD.X, Y = 1 - uvD.Y };
+                        uvA = new Vector2() {X = 1 - uvA.X, Y = 1 - uvA.Y};
+                        uvB = new Vector2() {X = 1 - uvB.X, Y = 1 - uvB.Y};
+                        uvC = new Vector2() {X = 1 - uvC.X, Y = 1 - uvC.Y};
+                        uvD = new Vector2() {X = 1 - uvD.X, Y = 1 - uvD.Y};
                     }
+                    
+                    cullFace = cullFace switch
+                    {
+                        Direction.North => Direction.South,
+                        Direction.East => Direction.West,
+                        Direction.South => Direction.North,
+                        Direction.West => Direction.East,
+                        _ => cullFace
+                    };
+                    direction = direction switch
+                    {
+                        Direction.North => Direction.South,
+                        Direction.East => Direction.West,
+                        Direction.South => Direction.North,
+                        Direction.West => Direction.East,
+                        _ => direction
+                    };
                     
                     break;
 
@@ -636,31 +654,43 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                     vertexD = new Vector3() { X = vertexD.Z, Y = vertexD.Y, Z = 1 - vertexD.X };
                     normal = new Vector3() { X = normal.Z, Y = normal.Y, Z = -normal.X };
 
-                    switch (cullFace)
-                    {
-                        case Direction.North: 
-                            cullFace = Direction.West;
-                            break;
-                        case Direction.East: 
-                            cullFace = Direction.North;
-                            break;
-                        case Direction.South: 
-                            cullFace = Direction.East;
-                            break;
-                        case Direction.West: 
-                            cullFace = Direction.South;
-                            break;
-                    }
-                    
                     // Lock uv
                     if (uvLock && direction is Direction.Up or Direction.Down)
                     {
-                        // 3
-                        uvA = new Vector2() { X = 1 - uvA.Y, Y = uvA.X };
-                        uvB = new Vector2() { X = 1 - uvB.Y, Y = uvB.X };
-                        uvC = new Vector2() { X = 1 - uvC.Y, Y = uvC.X };
-                        uvD = new Vector2() { X = 1 - uvD.Y, Y = uvD.X };
+                        // I really don't know why we have to rotate the down-side in the opposite direction, but
+                        // this fixes the UV issues.
+                        if (direction is Direction.Down)
+                        {
+                            uvA = new Vector2() {X = uvA.Y, Y = 1 - uvA.X};
+                            uvB = new Vector2() {X = uvB.Y, Y = 1 - uvB.X};
+                            uvC = new Vector2() {X = uvC.Y, Y = 1 - uvC.X};
+                            uvD = new Vector2() {X = uvD.Y, Y = 1 - uvD.X};
+                        }
+                        else
+                        {
+                            uvA = new Vector2() { X = 1 - uvA.Y, Y = uvA.X };
+                            uvB = new Vector2() { X = 1 - uvB.Y, Y = uvB.X };
+                            uvC = new Vector2() { X = 1 - uvC.Y, Y = uvC.X };
+                            uvD = new Vector2() { X = 1 - uvD.Y, Y = uvD.X };
+                        }
                     }
+                    
+                    cullFace = cullFace switch
+                    {
+                        Direction.North => Direction.West,
+                        Direction.East => Direction.North,
+                        Direction.South => Direction.East,
+                        Direction.West => Direction.South,
+                        _ => cullFace
+                    };
+                    direction = direction switch
+                    {
+                        Direction.North => Direction.West,
+                        Direction.East => Direction.North,
+                        Direction.South => Direction.East,
+                        Direction.West => Direction.South,
+                        _ => direction
+                    };
                     
                     break;
             }

@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinecraftWebExporter", "src\MinecraftWebExporter.csproj", "{986267BA-08A9-4146-89F0-31572AE599E4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinecraftWebExporter.Tests", "tests\MinecraftWebExporter.Tests.csproj", "{F5FAF5F8-C707-48A0-807C-2AFBB828C010}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{986267BA-08A9-4146-89F0-31572AE599E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{986267BA-08A9-4146-89F0-31572AE599E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{986267BA-08A9-4146-89F0-31572AE599E4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F5FAF5F8-C707-48A0-807C-2AFBB828C010}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F5FAF5F8-C707-48A0-807C-2AFBB828C010}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F5FAF5F8-C707-48A0-807C-2AFBB828C010}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F5FAF5F8-C707-48A0-807C-2AFBB828C010}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
