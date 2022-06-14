@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.IO.Compression;
 using System.Threading.Tasks;
+using MinecraftWebExporter.Utils;
 using SharpNBT;
 
 namespace MinecraftWebExporter.Minecraft.World
@@ -141,9 +142,11 @@ namespace MinecraftWebExporter.Minecraft.World
                 case 0:
                     return input;
                 case 1:
-                    return new GZipStream(input, CompressionMode.Decompress, true);
+                    return new DotNet6CompressionStreamFix(
+                        new GZipStream(input, CompressionMode.Decompress, true));
                 case 2:
-                    return new SharpNBT.ZLib.ZLibStream(input, CompressionMode.Decompress, true);
+                    return new DotNet6CompressionStreamFix(
+                        new SharpNBT.ZLib.ZLibStream(input, CompressionMode.Decompress, true));
                 default:
                     throw new ArgumentException("Invalid compression mode!", nameof(compressionMode));
             }
