@@ -1,9 +1,15 @@
-﻿![](.github/images/minecraft-web-viewer.png)
+﻿# Minecraft Web Exporter
+[![Release](https://img.shields.io/github/release/Arcus92/minecraft-web-exporter.svg)](https://GitHub.com/Arcus92/minecraft-web-exporter/releases/)
+[![Downloads](https://img.shields.io/github/downloads/Arcus92/minecraft-web-exporter/total.svg)](https://github.com/Arcus92/minecraft-web-exporter/releases)
+[![License](https://img.shields.io/github/license/Arcus92/minecraft-web-exporter.svg)](https://github.com/Arcus92/minecraft-web-exporter/blob/main/LICENSE)
+[![Demo](https://img.shields.io/badge/demo-available-green.svg)](https://3dmap.david-schulte.de/#w=world&tx=196&tz=382.4&cx=155&cy=93.7&cz=402.6)
 
-The `Minecraft Web Exporter` converts your Minecraft worlds into a format that can be used by the [Minecraft Web Viewer](https://github.com/Arcus92/minecraft-web-viewer) to render your Minecraft world in 3D in your web browser. 
+The **Minecraft Web Exporter** converts your Minecraft worlds into a format that can be used by the [Minecraft Web Viewer](https://github.com/Arcus92/minecraft-web-viewer) to render your Minecraft world in 3D in your web browser.
 [Try the demo!](https://3dmap.david-schulte.de/#w=world&tx=196&tz=382.4&cx=155&cy=93.7&cz=402.6)
 
-# Usage
+![](.github/images/minecraft-web-viewer.jpg)
+
+## Usage
 
 - Install the [.NET 6 Runtime](https://dotnet.microsoft.com/en-us/download/dotnet/6.0) .
 - Download the [latest release](https://github.com/Arcus92/minecraft-web-exporter/releases) or [compile from source](#compile-from-source).
@@ -21,7 +27,9 @@ The converter is a command line tool. There is no user interface and you have to
 ./MinecraftWebExporter -m 1.18.2 -w %appdata%/.minecraft/saves/world -o C:/Users/Herobrine/Desktop/MinecratExport
 ```
 
-## Command line arguments
+The next step is to set up the viewer itself. Please follow the instructions on the [Minecraft Web Viewer](https://github.com/Arcus92/minecraft-web-viewer) project.
+
+### Command line arguments
 
 | Argument                                                        | Description                                                                                                                                                         | 
 |-----------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -37,7 +45,7 @@ The converter is a command line tool. There is no user interface and you have to
 | `--culling [true/false]` or <br/> `-c [true/false]`             | Defines if the underground should be culled out to save on resources. The default is `true`.                                                                        |
 | `--cullingheight [y]`                                           | Defines the *underground culling height*. Everything below this height is removed if there is no direct or indirect sun light. The default is `64` *(ocean level)*. |
 
-# Compiling from source
+## Compiling from source
 
 You will need [.NET 6 SDK](https://dotnet.microsoft.com/en-us/download/dotnet/6.0).
 
@@ -47,7 +55,7 @@ cd minecraft-web-exporter
 dotnet restore
 ```
 
-## Build
+### Build
 
 
 ```shell
@@ -58,13 +66,13 @@ You can find the output files in `minecraft-web-exporter/src/bin/Release/net5.0/
 
 You can replace `win-x64` with `linux-x64` for Linux or `osx-x64` for MacOS.
 
-# Notice
+## Notice
 
 this project wouldn't have been possible without:
 - [SharpNBT](https://github.com/ForeverZer0/SharpNBT)
 - [ImageSharp](https://github.com/SixLabors/ImageSharp)
 
-# License
+## License
 
 ```text
 MIT License
