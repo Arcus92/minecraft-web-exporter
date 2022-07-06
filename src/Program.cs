@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using MinecraftWebExporter.Export;
 using MinecraftWebExporter.Minecraft;
 using MinecraftWebExporter.Minecraft.World;
-using MinecraftWebExporter.Structs;
 
 namespace MinecraftWebExporter
 {
@@ -18,229 +13,46 @@ namespace MinecraftWebExporter
     {
         static async Task Main(string[] args)
         {
-            // TODO: Clean up argument parser and optimize usage for 'non-developers':
-            // - Auto-detect latest installed Minecraft version.
-            // - Allow 2D --from and --to coordinates. In may cases you don't need to specify the y component.
-            // - Specify material and texture subdirectory to support multiple Minecraft versions / texture packs.
-            // - Validate the inputs and return better error messages.
-            // - Show errors / warning if unsupported chunks (pre 1.13 or without height / lightmap) were detected.
-            // - Add parameter to disable block lighting.
-            // - Proper export progress bar. 
-            // - Add help text and how-to-use.
-
-            string? pathToMinecraft = null;
-            string? pathToOutput = null;
-            string? pathToWorld = null;
-            string? worldAlias = null;
-            int? numberOfThreads = default;
-            Vector3? worldMin = default;
-            Vector3? worldMax = default;
-            Vector3? worldHome = default;
-            var culling = true;
-            int? cullingHeight = default;
-            var pathToResourcePacks = new List<string>();
-
-            for (var i = 0; i < args.Length; i++)
-            {
-                var arg = args[i];
-
-                switch (arg.ToLowerInvariant())
-                {
-                    case "-m":
-                    case "--minecraft":
-                        if (i < args.Length - 1)
-                        {
-                            pathToMinecraft = args[++i];
-
-                            // The path doesn't contain any path separators. 
-                            // We will try to interpret this as version number and search in the default location.
-                            if (pathToMinecraft.IndexOf('/') < 0 && pathToMinecraft.IndexOf('\\') < 0)
-                            {
-                                var minecraftVersion = pathToMinecraft;
-                                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                                {
-                                    var pathToAppData =
-                                        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                                    pathToMinecraft = Path.Combine(pathToAppData, ".minecraft");
-                                }
-                                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                                {
-                                    var pathToUserDirectory =
-                                        Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-                                    pathToMinecraft = Path.Combine(pathToUserDirectory, ".minecraft");
-                                }
-                                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                                {
-                                    var pathToUserDirectory =
-                                        Environment.GetFolderPath(Environment.SpecialFolder.Personal);
-                                    pathToMinecraft = Path.Combine(pathToUserDirectory, "Library", "Application Support", "minecraft");
-                                }
-                                else throw new NotSupportedException("Cannot detect the Minecraft directory for your OS! Please specify the full path to the Minecraft jar file.");
-
-                                pathToMinecraft = Path.Combine(pathToMinecraft, "versions", minecraftVersion,
-                                    $"{minecraftVersion}.jar");
-                            }
-                        }
-                        break;
-                    
-                    case "-o":
-                    case "--output":
-                        if (i < args.Length - 1)
-                        {
-                            pathToOutput = args[++i];
-                        }
-                        break;
-                    
-                    case "-w":
-                    case "--world":
-                        if (i < args.Length - 1)
-                        {
-                            pathToWorld = args[++i];
-                            if (pathToWorld.EndsWith('/') || pathToWorld.EndsWith('\\'))
-                            {
-                                pathToWorld = pathToWorld.Substring(0, pathToWorld.Length - 1);
-                            }
-                        }
-                        break;
-                    
-                    case "-a":
-                    case "--alias":
-                        if (i < args.Length - 1)
-                        {
-                            worldAlias = args[++i];
-                        }
-                        break;
-                    
-                    case "-r":
-                    case "--resourcepack":
-                        if (i < args.Length - 1)
-                        {
-                            var pathToResourcePack = args[++i];
-                            pathToResourcePacks.Add(pathToResourcePack);
-                        }
-                        break;
-                    
-                    case "-t":
-                    case "--threads":
-                        if (i < args.Length - 1)
-                        {
-                            numberOfThreads = int.Parse(args[++i]);
-                        }
-                        break;
-                    
-                    case "--min":
-                    case "--from":
-                        if (i < args.Length - 3)
-                        {
-                            var v = new Vector3();
-                            v.X = int.Parse(args[++i]);
-                            v.Y = int.Parse(args[++i]);
-                            v.Z = int.Parse(args[++i]);
-                            worldMin = v;
-                            
-                        }
-                        break;
-                    case "--max":
-                    case "--to":
-                        if (i < args.Length - 3)
-                        {
-                            var v = new Vector3();
-                            v.X = int.Parse(args[++i]);
-                            v.Y = int.Parse(args[++i]);
-                            v.Z = int.Parse(args[++i]);
-                            worldMax = v;
-                            
-                        }
-                        break;
-                    case "--home":
-                        if (i < args.Length - 3)
-                        {
-                            var v = new Vector3();
-                            v.X = int.Parse(args[++i]);
-                            v.Y = int.Parse(args[++i]);
-                            v.Z = int.Parse(args[++i]);
-                            worldHome = v;
-                            
-                        }
-                        break;
-                    
-                    case "-c":
-                    case "--culling":
-                        if (i < args.Length - 1)
-                        {
-                            culling = bool.Parse(args[++i]);
-                        }
-                        break;
-                    
-                    case "--cullingheight":
-                        if (i < args.Length - 1)
-                        {
-                            cullingHeight = int.Parse(args[++i]);
-                        }
-                        break;
-
-                    default:
-                        throw new ArgumentException($"Unknown parameter '{arg}'");
-                }
-            }
-
-            if (string.IsNullOrEmpty(pathToMinecraft))
-            {
-                throw new ArgumentException("Minecraft path is not set. Use `--minecraft <path/version>`");
-            }
-            
-            if (string.IsNullOrEmpty(pathToWorld))
-            {
-                throw new ArgumentException("World path is not set. Use `--world <path>`");
-            }
-            
-            if (string.IsNullOrEmpty(pathToOutput))
-            {
-                throw new ArgumentException("Output path is not set. Use `--output <path>`");
-            }
-
-            // Calculate the center of the world bounds as home
-            if (!worldHome.HasValue && worldMin.HasValue && worldMax.HasValue)
-            {
-                worldHome = (worldMin.Value + worldMax.Value) / 2;
-            }
-            
+            var parameter = ProgramParameter.Parse(args);
+            await RunWorldExport(parameter);
+        }
+        
+        private static async Task RunWorldExport(ProgramParameter parameter)
+        {
             // Collects all resource packs
             var resourcePacks = new ResourcePacks();
-            resourcePacks.AddRange(pathToResourcePacks);
-            resourcePacks.Add(pathToMinecraft);
+            resourcePacks.AddRange(parameter.PathToResourcePacks);
+            resourcePacks.Add(parameter.PathToMinecraft);
 
             // Creates an asset manager
             var assets = new AssetManager(resourcePacks);
 
             // Loads the world
-            var world = new World(assets, pathToWorld);
+            var world = new World(assets, parameter.PathToWorld);
             
-            // Create the exporter
-            var exporter = new WorldExporter(assets, world, pathToOutput)
+            // Create the exporter instance
+            var exporter = new WorldExporter(assets, world, parameter.PathToOutput)
             {
-                WorldAlias = worldAlias,
-                WorldBorderMin = worldMin,
-                WorldBorderMax = worldMax,
-                WorldHome = worldHome,
-                UndergroundCulling = culling,
+                WorldAlias = parameter.WorldAlias,
+                WorldBorderMin = parameter.WorldMin,
+                WorldBorderMax = parameter.WorldMax,
+                WorldHome = parameter.WorldHome,
+                CaveCulling = parameter.CaveCulling,
             };
 
-            if (cullingHeight.HasValue)
+            if (parameter.CaveCullingHeight.HasValue)
             {
-                exporter.UndergroundCullingHeight = cullingHeight.Value;
+                exporter.CaveCullingHeight = parameter.CaveCullingHeight.Value;
             }
             
-            if (numberOfThreads.HasValue)
+            if (parameter.NumberOfThreads.HasValue)
             {
-                exporter.NumberOfThreads = numberOfThreads.Value;
+                exporter.NumberOfThreads = parameter.NumberOfThreads.Value;
             }
             
             await exporter.ExportAsync();
 
             assets.Dispose();
         }
-
-        
     }
 }

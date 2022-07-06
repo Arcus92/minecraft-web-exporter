@@ -39,11 +39,11 @@ The next step is to set up the viewer itself. Please follow the instructions on 
 | `--alias [world name]` or <br/> `-a [world name]`               | Overwrites the world name in the output directory. By default it will keep the name of your world folder.                                                           |
 | `--resourcepack [path]` or <br/> `-r [path]`                    | Adds a resource pack to the export. You can have multiple resource packs by adding multiple `--resourcepack` arguments.                                             |
 | `--threads [number]` or <br/> `-t [number]`                     | Defines the number of parallel export thread. The default is `16`.                                                                                                  |
-| `--from [x] [y] [z]`                                            | Defines the start point of the export area *(including)*. By default the whole world is exported.                                                                   |
-| `--to [x] [y] [z]`                                              | Defines the end point of the export area *(excluding)*. By default the whole world is exported.                                                                     |
-| `--home [x] [y] [z]`                                            | Defines the *home position* where the web viewer starts. The default is `0 0 0`. If `--from` and `--to` are used the default is the center of the defined area.     |
+| `--from [x] [y] [z]` or <br/> `--from [x] [z]`                  | Defines the start point of the export area *(including)*. By default the whole world is exported.                                                                   |
+| `--to [x] [y] [z]` or <br/> `--to [x] [z]`                      | Defines the end point of the export area *(excluding)*. By default the whole world is exported.                                                                     |
+| `--home [x] [y] [z]` or <br/> `--home [x] [z]`                  | Defines the *home position* where the web viewer starts. The default is `0 0 0`. If `--from` and `--to` are used the default is the center of the defined area.     |
 | `--culling [true/false]` or <br/> `-c [true/false]`             | Defines if the underground should be culled out to save on resources. The default is `true`.                                                                        |
-| `--cullingheight [y]`                                           | Defines the *underground culling height*. Everything below this height is removed if there is no direct or indirect sun light. The default is `64` *(ocean level)*. |
+| `--culling-height [y]`                                          | Defines the *underground culling height*. Everything below this height is removed if there is no direct or indirect sun light. The default is `64` *(ocean level)*. |
 
 ## Compiling from source
 

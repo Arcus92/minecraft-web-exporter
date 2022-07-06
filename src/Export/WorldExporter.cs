@@ -39,7 +39,7 @@ namespace MinecraftWebExporter.Export
         public string Output { get; }
 
         /// <summary>
-        /// Gets and sets the number of threads
+        /// Gets and sets the number of export threads
         /// </summary>
         public int NumberOfThreads { get; set; } = 16;
 
@@ -74,12 +74,12 @@ namespace MinecraftWebExporter.Export
         /// <summary>
         /// Gets and sets if the underground is culled out
         /// </summary>
-        public bool UndergroundCulling { get; set; } = true;
+        public bool CaveCulling { get; set; } = true;
 
         /// <summary>
         /// Gets and sets the underground culling height
         /// </summary>
-        public int UndergroundCullingHeight { get; set; } = 64;
+        public int CaveCullingHeight { get; set; } = 64;
 
         /// <summary>
         /// Gets ands the world alias for the export.
@@ -214,6 +214,10 @@ namespace MinecraftWebExporter.Export
             if (WorldHome.HasValue)
             {
                 worldInfo.Home = WorldHome.Value;
+            }
+            else if (WorldBorderMin.HasValue && WorldBorderMax.HasValue)
+            {
+                worldInfo.Home = WorldBorderMax.Value - WorldBorderMin.Value;
             }
 
             var worldInfoPath = Path.Combine(Output, WorldName, "info.json");
@@ -474,7 +478,7 @@ namespace MinecraftWebExporter.Export
                 }
 
                 // Removes non surface blocks
-                if (UndergroundCulling && !await IsVisibleFromWorldSurfaceAsync(x, y, z))
+                if (CaveCulling && !await IsVisibleFromWorldSurfaceAsync(x, y, z))
                     continue;
                 
                 var offset = new Vector3(x - originX , y, z - originZ);
@@ -922,7 +926,7 @@ namespace MinecraftWebExporter.Export
         /// <returns></returns>
         private async ValueTask<bool> IsVisibleFromWorldSurfaceAsync(int x, int y, int z)
         {
-            if (y >= UndergroundCullingHeight) return true;
+            if (y >= CaveCullingHeight) return true;
             
             var blockX = (byte) (x & 0x0F);
             var blockZ = (byte) (z & 0x0F);
