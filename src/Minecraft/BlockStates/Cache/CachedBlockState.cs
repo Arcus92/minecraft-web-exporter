@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using MinecraftWebExporter.Minecraft.BlockEntities;
 
 namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
 {
@@ -111,6 +112,25 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
             if (properties?.GetValueOrDefault("waterlogged") == "true")
             {
                 waterLevel = 0;
+            }
+            
+            // Check if this is an entity block and use the build-in renderer instead
+            if (BlockEntityRenderer.Map.TryGetValue(blockStateAsset, out var renderer))
+            {
+                var faces = new List<CachedBlockStateFace>();
+                renderer.Build(faces, properties);
+                return new CachedBlockState()
+                {
+                    Variants = new[]
+                    {
+                        new CachedBlockStateVariant()
+                        {
+                            Faces = faces.ToArray(),
+                        }
+                    },
+                    WaterLevel = waterLevel,
+                    LavaLevel = lavaLevel,
+                };
             }
             
             var variants = new List<CachedBlockStateVariant>();

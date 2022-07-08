@@ -16,12 +16,6 @@ namespace MinecraftWebExporter.Export
         /// </summary>
         [JsonPropertyName("home")]
         public Vector3 Home { get; set; }
-        
-        /// <summary>
-        /// Gets and sets the list of material files to load
-        /// </summary>
-        [JsonPropertyName("materials")]
-        public string[]? Materials { get; set; }
 
         /// <summary>
         /// Gets and sets the detail levels for this world

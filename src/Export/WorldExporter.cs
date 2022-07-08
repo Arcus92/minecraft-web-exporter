@@ -210,7 +210,6 @@ namespace MinecraftWebExporter.Export
 
             var worldInfo = new WorldInfo();
             worldInfo.Views = Views;
-            worldInfo.Materials = MaterialPrefixes;
             if (WorldHome.HasValue)
             {
                 worldInfo.Home = WorldHome.Value;
@@ -470,20 +469,20 @@ namespace MinecraftWebExporter.Export
             for (var y = minY; y < maxY; y++)
             for (var z = minZ; z < maxZ; z++)
             {
-                var block = await World.GetBlockAsync(x, y, z);
-                var blockVariant = block.GetRandomVariant();
-                if (blockVariant.Faces is null)
-                {
-                    continue;
-                }
-
                 // Removes non surface blocks
                 if (CaveCulling && !await IsVisibleFromWorldSurfaceAsync(x, y, z))
                     continue;
                 
-                var offset = new Vector3(x - originX , y, z - originZ);
-                IEnumerable<CachedBlockStateFace> faces = blockVariant.Faces;
+                IEnumerable<CachedBlockStateFace> faces = Array.Empty<CachedBlockStateFace>();
                 
+                // Handles the block model
+                var block = await World.GetBlockAsync(x, y, z);
+                var blockVariant = block.GetRandomVariant();
+                if (blockVariant.Faces is not null)
+                {
+                    faces = faces.Concat(blockVariant.Faces);
+                }
+
                 // Handle water
                 if (block.WaterLevel.HasValue)
                 {
@@ -505,6 +504,8 @@ namespace MinecraftWebExporter.Export
                         faces = faces.Concat(model.Faces);
                     }
                 }
+                
+                var offset = new Vector3(x - originX , y, z - originZ);
                 
                 // Export all faces
                 foreach (var face in faces)
@@ -1032,14 +1033,10 @@ namespace MinecraftWebExporter.Export
         {
             // Writes the materials
             Console.WriteLine("Exporting materials...");
-            foreach (var texturePrefix in MaterialPrefixes)
-            {
-                var mtlFileName = texturePrefix + ".mats";
-                var mtlFilePath = Path.Combine(Output, mtlFileName);
-
-                Console.WriteLine($"Exporting {mtlFileName}...");
-                await ExportMaterialsAsync(mtlFilePath, texturePrefix + "/");
-            }
+            var mtlFileName = "minecraft.mats";
+            var mtlFilePath = Path.Combine(Output, mtlFileName);
+            
+            await ExportMaterialsAsync(mtlFilePath, MaterialPrefixes);
         }
         
         /// <summary>
@@ -1048,7 +1045,7 @@ namespace MinecraftWebExporter.Export
         /// <param name="mtlPath"></param>
         /// <param name="texturePrefix"></param>
         /// <param name="textureSubDirectory"></param>
-        private async Task ExportMaterialsAsync(string mtlPath, string texturePrefix, string textureSubDirectory = "textures")
+        private async Task ExportMaterialsAsync(string mtlPath, string[] texturePrefix, string textureSubDirectory = "textures")
         {
             var mtlDirectory = Path.GetDirectoryName(mtlPath);
             if (mtlDirectory == null)
@@ -1058,7 +1055,7 @@ namespace MinecraftWebExporter.Export
             var mtlFile = new MaterialFile();
             foreach (var textureAsset in Assets.Source.GetAssets(AssetType.Texture, "minecraft"))
             {
-                if (!textureAsset.Name.StartsWith(texturePrefix))
+                if (!texturePrefix.Any(p => textureAsset.Name.StartsWith(p)))
                     continue;
                 
                 // Gets the material
