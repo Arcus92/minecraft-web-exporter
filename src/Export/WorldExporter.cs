@@ -216,7 +216,7 @@ namespace MinecraftWebExporter.Export
             }
             else if (WorldBorderMin.HasValue && WorldBorderMax.HasValue)
             {
-                worldInfo.Home = WorldBorderMax.Value - WorldBorderMin.Value;
+                worldInfo.Home = (WorldBorderMax.Value + WorldBorderMin.Value) / 2f;
             }
 
             var worldInfoPath = Path.Combine(Output, WorldName, "info.json");
