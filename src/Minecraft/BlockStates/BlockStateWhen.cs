@@ -148,6 +148,49 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
                             }
                         }
                     }
+                    else if (name == "AND")
+                    {
+                        while (reader.Read())
+                        {
+                            if (reader.TokenType == JsonTokenType.EndObject)
+                            {
+                                break;
+                            }
+                            
+                            if (reader.TokenType == JsonTokenType.StartArray)
+                            {
+                                var item = new Dictionary<string, string>();
+                                while (reader.Read())
+                                {
+                                    if (reader.TokenType == JsonTokenType.EndArray)
+                                    {
+                                        break;
+                                    }
+
+                                    if (reader.TokenType == JsonTokenType.StartObject)
+                                    {
+                                        var subItem = converter.Read(ref reader, typeof(Dictionary<string, string>), options);
+                                        if (subItem is not null)
+                                        {
+                                            foreach (var pair in subItem)
+                                            {
+                                                item.Add(pair.Key, pair.Value);
+                                            }
+                                        }
+                                    }
+                                    else if (reader.TokenType != JsonTokenType.Comment)
+                                    {
+                                        throw new JsonException();
+                                    }
+                                }
+                                when.Add(item);
+                            }
+                            else if (reader.TokenType != JsonTokenType.Comment)
+                            {
+                                throw new JsonException();
+                            }
+                        }
+                    }
                     else
                     {
                         reader = start;
