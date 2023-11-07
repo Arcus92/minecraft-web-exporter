@@ -28,6 +28,12 @@ public class TestAssetSource : IAssetSource
         yield break;
     }
     
+    /// <inheritdoc cref="IAssetSource.GetNamespaces"/>
+    public IEnumerable<string> GetNamespaces()
+    {
+        yield return "minecraft";
+    }
+    
     /// <inheritdoc cref="IAssetSource.Dispose"/>
     public void Dispose()
     {

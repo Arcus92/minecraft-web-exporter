@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -21,7 +22,22 @@ namespace MinecraftWebExporter.Minecraft
         /// <param name="path"></param>
         public void Add(string path)
         {
-            m_List.Add(new ResourcePack(path));
+            if (Directory.Exists(path))
+            {
+                foreach (var file in Directory.EnumerateFiles(path))
+                {
+                    var ext = Path.GetExtension(file);
+                    if (!ext.Equals(".zip", StringComparison.OrdinalIgnoreCase) &&
+                        !ext.Equals(".jar", StringComparison.OrdinalIgnoreCase))
+                        continue;
+                    
+                    m_List.Add(new ResourcePack(file));
+                }
+            }
+            else
+            {
+                m_List.Add(new ResourcePack(path));
+            }
         }
 
         /// <summary>
@@ -30,7 +46,10 @@ namespace MinecraftWebExporter.Minecraft
         /// <param name="paths"></param>
         public void AddRange(IEnumerable<string> paths)
         {
-            m_List.AddRange(paths.Select(p => new ResourcePack(p)));
+            foreach (var path in paths)
+            {
+                Add(path);
+            }
         }
         
         /// <summary>
@@ -87,7 +106,16 @@ namespace MinecraftWebExporter.Minecraft
                 }
             }
         }
-        
+
+        /// <summary>
+        /// Returns all assets for the given type and namespace
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<string> GetNamespaces()
+        {
+            return m_List.SelectMany(e => e.GetNamespaces()).Distinct();
+        }
+
         /// <summary>
         /// Dispose all resource packs
         /// </summary>

@@ -32,5 +32,11 @@ namespace MinecraftWebExporter.Minecraft
         /// <param name="ns"></param>
         /// <returns></returns>
         public IEnumerable<AssetIdentifier> GetAssets(AssetType type, string ns);
+
+        /// <summary>
+        /// Returns all namespaces used in this asset source
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<string> GetNamespaces();
     }
 }

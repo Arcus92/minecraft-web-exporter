@@ -84,7 +84,7 @@ namespace MinecraftWebExporter.Minecraft
             IEnumerable<ZipArchiveEntry> entries;
             lock (m_ZipArchive)
             {
-                entries = m_ZipArchive.Entries.Where(e => e.FullName.StartsWith(path));
+                entries = m_ZipArchive.Entries.Where(e => e.FullName.StartsWith(path)).ToList();
             }
 
             foreach (var entry in entries)
@@ -103,7 +103,34 @@ namespace MinecraftWebExporter.Minecraft
 
                 yield return new AssetIdentifier(type, ns, name);
             }
-            
+        }
+        
+        /// <summary>
+        /// Returns all assets for the given type and namespace
+        /// </summary>
+        /// <returns></returns>
+        public IEnumerable<string> GetNamespaces()
+        {
+            IEnumerable<string> namespaces;
+            lock (m_ZipArchive)
+            {
+                namespaces = m_ZipArchive.Entries
+                    .Where(e => e.FullName.StartsWith("assets/"))
+                    .Select(e =>
+                        {
+                            var path = e.FullName;
+                            var start = path.IndexOf('/');
+                            var end = path.IndexOf('/', start + 1);
+                            if (end < 0) end = path.Length;
+                            var ns = path.Substring(start + 1, end - start - 1);
+                            return ns;
+                        }
+                    )
+                    .Where(e => e != "")
+                    .Distinct().ToList();
+            }
+
+            return namespaces;
         }
         
         /// <summary>

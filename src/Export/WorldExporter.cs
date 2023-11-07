@@ -1050,60 +1050,66 @@ namespace MinecraftWebExporter.Export
             var mtlDirectory = Path.GetDirectoryName(mtlPath);
             if (mtlDirectory == null)
                 throw new ArgumentException($"Could not get parent directory of '{mtlPath}'!", nameof(mtlPath));
-            
+
+            // Fetch all namespaces
+            var namespaces = Assets.Source.GetNamespaces().ToList();
             
             var mtlFile = new MaterialFile();
-            foreach (var textureAsset in Assets.Source.GetAssets(AssetType.Texture, "minecraft"))
+
+            foreach (var ns in namespaces)
             {
-                if (!texturePrefix.Any(p => textureAsset.Name.StartsWith(p)))
-                    continue;
-                
-                // Gets the material
-                var textureInfo = await Assets.GetTextureAsync(textureAsset);
-
-                // Gets the name
-                var name = GetMaterialNameByAsset(textureAsset);
-                var textureFileName = textureSubDirectory + "/" + name + ".png";
-                
-                var textureFilePath = Path.Combine(mtlDirectory, textureFileName);
-                if (!File.Exists(textureFilePath))
+                foreach (var textureAsset in Assets.Source.GetAssets(AssetType.Texture, ns))
                 {
-                    var texturePath = Path.GetDirectoryName(textureFilePath);
-                    Debug.Assert(texturePath != null, nameof(texturePath) + " != null");
-                    Directory.CreateDirectory(texturePath);
-
-                    if (!Assets.Source.TryOpenAsset(textureAsset, out var textureStream) || textureStream is null)
+                    if (!texturePrefix.Any(p => textureAsset.Name.StartsWith(p)))
                         continue;
-                    
-                    await using (textureStream)
-                    {
-                        await using var textureOutput = new FileStream(textureFilePath, FileMode.Create);
-                        await textureStream.CopyToAsync(textureOutput);
-                    }
-                    
-                }
 
-                var animationFrameTime = 0;
-                var animationFrameCount = 0;
-                int[]? animationFrames = null;
-                if (textureInfo.Animation.HasValue)
-                {
-                    var animation = textureInfo.Animation.Value;
-                    animationFrameTime = animation.FrameTime;
-                    animationFrameCount = textureInfo.Height / textureInfo.Width;
-                    animationFrames = animation.Frames;
+                    // Gets the material
+                    var textureInfo = await Assets.GetTextureAsync(textureAsset);
+
+                    // Gets the name
+                    var name = GetMaterialNameByAsset(textureAsset);
+                    var textureFileName = textureSubDirectory + "/" + name + ".png";
+
+                    var textureFilePath = Path.Combine(mtlDirectory, textureFileName);
+                    if (!File.Exists(textureFilePath))
+                    {
+                        var texturePath = Path.GetDirectoryName(textureFilePath);
+                        Debug.Assert(texturePath != null, nameof(texturePath) + " != null");
+                        Directory.CreateDirectory(texturePath);
+
+                        if (!Assets.Source.TryOpenAsset(textureAsset, out var textureStream) || textureStream is null)
+                            continue;
+
+                        await using (textureStream)
+                        {
+                            await using var textureOutput = new FileStream(textureFilePath, FileMode.Create);
+                            await textureStream.CopyToAsync(textureOutput);
+                        }
+
+                    }
+
+                    var animationFrameTime = 0;
+                    var animationFrameCount = 0;
+                    int[]? animationFrames = null;
+                    if (textureInfo.Animation.HasValue)
+                    {
+                        var animation = textureInfo.Animation.Value;
+                        animationFrameTime = animation.FrameTime;
+                        animationFrameCount = textureInfo.Height / textureInfo.Width;
+                        animationFrames = animation.Frames;
+                    }
+
+                    var material = new MeshMaterial()
+                    {
+                        Name = name,
+                        Texture = textureFileName,
+                        Transparent = textureInfo.Transparency == TextureTransparency.Semi,
+                        AnimationFrameTime = animationFrameTime,
+                        AnimationFrameCount = animationFrameCount,
+                        AnimationFrames = animationFrames,
+                    };
+                    mtlFile.Materials.Add(material);
                 }
-                
-                var material = new MeshMaterial()
-                {
-                    Name = name, 
-                    Texture = textureFileName,
-                    Transparent = textureInfo.Transparency == TextureTransparency.Semi,
-                    AnimationFrameTime = animationFrameTime,
-                    AnimationFrameCount = animationFrameCount,
-                    AnimationFrames = animationFrames,
-                };
-                mtlFile.Materials.Add(material);
             }
 
             await mtlFile.WriteToFileAsync(mtlPath);
