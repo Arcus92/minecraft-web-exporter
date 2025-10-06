@@ -11,261 +11,260 @@ using MinecraftWebExporter.Serialization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace MinecraftWebExporter.Minecraft
+namespace MinecraftWebExporter.Minecraft;
+
+/// <summary>
+/// The asset manager handles the loading of textures, models and block states.
+/// </summary>
+public class AssetManager : IAssetManager
 {
-    /// <summary>
-    /// The asset manager handles the loading of textures, models and block states.
-    /// </summary>
-    public class AssetManager : IAssetManager
+    public AssetManager(IAssetSource source)
     {
-        public AssetManager(IAssetSource source)
+        Source = source;
+        ModelCache = new ModelCache(this);
+    }
+        
+    /// <summary>
+    /// The main asset source
+    /// </summary>
+    public IAssetSource Source { get; }
+        
+    /// <summary>
+    /// Gets the model cache
+    /// </summary>
+    public ModelCache ModelCache { get; }
+        
+    #region Models
+        
+    /// <summary>
+    /// The model cache
+    /// </summary>
+    private readonly ConcurrentDictionary<AssetIdentifier, Model> m_Models = new();
+        
+    /// <summary>
+    /// The model cache
+    /// </summary>
+    private readonly ConcurrentDictionary<AssetIdentifier, CachedModel> m_CachedModels = new();
+
+    /// <summary>
+    /// Returns the model for the given asset
+    /// </summary>
+    /// <param name="asset"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public async Task<Model?> GetModelAsync(AssetIdentifier asset)
+    {
+        if (asset.Type != AssetType.Model)
         {
-            Source = source;
-            ModelCache = new ModelCache(this);
+            throw new ArgumentException( "Asset type must be model!", nameof(asset));
         }
-        
-        /// <summary>
-        /// The main asset source
-        /// </summary>
-        public IAssetSource Source { get; }
-        
-        /// <summary>
-        /// Gets the model cache
-        /// </summary>
-        public ModelCache ModelCache { get; }
-        
-        #region Models
-        
-        /// <summary>
-        /// The model cache
-        /// </summary>
-        private readonly ConcurrentDictionary<AssetIdentifier, Model> m_Models = new();
-        
-        /// <summary>
-        /// The model cache
-        /// </summary>
-        private readonly ConcurrentDictionary<AssetIdentifier, CachedModel> m_CachedModels = new();
 
-        /// <summary>
-        /// Returns the model for the given asset
-        /// </summary>
-        /// <param name="asset"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
-        public async Task<Model?> GetModelAsync(AssetIdentifier asset)
+        if (m_Models.TryGetValue(asset, out var model))
         {
-            if (asset.Type != AssetType.Model)
-            {
-                throw new ArgumentException( "Asset type must be model!", nameof(asset));
-            }
-
-            if (m_Models.TryGetValue(asset, out var model))
-            {
-                return model;
-            }
-            
-            if (!Source.TryOpenAsset(asset, out var stream) || stream is null)
-            {
-                return null;
-            }
-            
-            model = await JsonSerializer.DeserializeAsync(stream, JsonContext.Default.Model);
-            if (model == null)
-            {
-                throw new ArgumentException("Could not read json model data!");
-            }
-
-            model = await model.Combine(this);
-            
-            m_Models.TryAdd(asset, model);
-            
-            await stream.DisposeAsync();
             return model;
         }
-
-        /// <summary>
-        /// Returns the model for the given asset
-        /// </summary>
-        /// <param name="asset"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
-        public async Task<CachedModel> GetCachedModelAsync(AssetIdentifier asset)
+            
+        if (!Source.TryOpenAsset(asset, out var stream) || stream is null)
         {
-            if (asset.Type != AssetType.Model)
-            {
-                throw new ArgumentException( "Asset type must be model!", nameof(asset));
-            }
+            return null;
+        }
+            
+        model = await JsonSerializer.DeserializeAsync(stream, JsonContext.Default.Model);
+        if (model == null)
+        {
+            throw new ArgumentException("Could not read json model data!");
+        }
 
-            if (m_CachedModels.TryGetValue(asset, out var cachedModel))
-            {
-                return cachedModel;
-            }
+        model = await model.Combine(this);
             
-            var model = await GetModelAsync(asset);
-            cachedModel = await CachedModel.CreateAsync(this, model);
+        m_Models.TryAdd(asset, model);
             
-            m_CachedModels.TryAdd(asset, cachedModel);
+        await stream.DisposeAsync();
+        return model;
+    }
+
+    /// <summary>
+    /// Returns the model for the given asset
+    /// </summary>
+    /// <param name="asset"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public async Task<CachedModel> GetCachedModelAsync(AssetIdentifier asset)
+    {
+        if (asset.Type != AssetType.Model)
+        {
+            throw new ArgumentException( "Asset type must be model!", nameof(asset));
+        }
+
+        if (m_CachedModels.TryGetValue(asset, out var cachedModel))
+        {
             return cachedModel;
         }
+            
+        var model = await GetModelAsync(asset);
+        cachedModel = await CachedModel.CreateAsync(this, model);
+            
+        m_CachedModels.TryAdd(asset, cachedModel);
+        return cachedModel;
+    }
         
-        #endregion Models
+    #endregion Models
 
-        #region Block states
+    #region Block states
 
-        /// <summary>
-        /// The block state cache
-        /// </summary>
-        private readonly ConcurrentDictionary<AssetIdentifier, BlockState> m_BlockStates = new();
+    /// <summary>
+    /// The block state cache
+    /// </summary>
+    private readonly ConcurrentDictionary<AssetIdentifier, BlockState> m_BlockStates = new();
 
-        /// <summary>
-        /// Returns the block state
-        /// </summary>
-        /// <param name="asset"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
-        public async Task<BlockState?> GetBlockStateAsync(AssetIdentifier asset)
+    /// <summary>
+    /// Returns the block state
+    /// </summary>
+    /// <param name="asset"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public async Task<BlockState?> GetBlockStateAsync(AssetIdentifier asset)
+    {
+        if (asset.Type != AssetType.BlockState)
         {
-            if (asset.Type != AssetType.BlockState)
-            {
-                throw new ArgumentException( "Asset type must be block state!", nameof(asset));
-            }
+            throw new ArgumentException( "Asset type must be block state!", nameof(asset));
+        }
 
-            if (m_BlockStates.TryGetValue(asset, out var blockState))
-            {
-                return blockState;
-            }
-            
-            if (!Source.TryOpenAsset(asset, out var stream) || stream is null)
-            {
-                return null;
-            }
-            
-            blockState = await JsonSerializer.DeserializeAsync(stream, JsonContext.Default.BlockState);
-            if (blockState is null)
-            {
-                throw new ArgumentException("Could not read json block state data!");
-            }
-            
-            m_BlockStates.TryAdd(asset, blockState);
+        if (m_BlockStates.TryGetValue(asset, out var blockState))
+        {
             return blockState;
         }
-        
-        #endregion Block states
-        
-        #region Textures
-        
-        /// <summary>
-        /// The texture cache
-        /// </summary>
-        private readonly ConcurrentDictionary<AssetIdentifier, CachedTexture> m_Textures = new();
-
-        /// <summary>
-        /// Returns the texture info
-        /// </summary>
-        /// <param name="asset"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
-        public async Task<CachedTexture> GetTextureAsync(AssetIdentifier asset)
+            
+        if (!Source.TryOpenAsset(asset, out var stream) || stream is null)
         {
-            if (asset.Type != AssetType.Texture)
-            {
-                throw new ArgumentException( "Asset type must be texture!", nameof(asset));
-            }
+            return null;
+        }
+            
+        blockState = await JsonSerializer.DeserializeAsync(stream, JsonContext.Default.BlockState);
+        if (blockState is null)
+        {
+            throw new ArgumentException("Could not read json block state data!");
+        }
+            
+        m_BlockStates.TryAdd(asset, blockState);
+        return blockState;
+    }
+        
+    #endregion Block states
+        
+    #region Textures
+        
+    /// <summary>
+    /// The texture cache
+    /// </summary>
+    private readonly ConcurrentDictionary<AssetIdentifier, CachedTexture> m_Textures = new();
 
-            if (m_Textures.TryGetValue(asset, out var cachedTexture))
-            {
-                return cachedTexture;
-            }
+    /// <summary>
+    /// Returns the texture info
+    /// </summary>
+    /// <param name="asset"></param>
+    /// <returns></returns>
+    /// <exception cref="ArgumentException"></exception>
+    public async Task<CachedTexture> GetTextureAsync(AssetIdentifier asset)
+    {
+        if (asset.Type != AssetType.Texture)
+        {
+            throw new ArgumentException( "Asset type must be texture!", nameof(asset));
+        }
+
+        if (m_Textures.TryGetValue(asset, out var cachedTexture))
+        {
+            return cachedTexture;
+        }
             
-            // Opens the texture
-            if (!Source.TryOpenAsset(asset, out var stream) || stream is null)
-            {
-                return default;
-            }
+        // Opens the texture
+        if (!Source.TryOpenAsset(asset, out var stream) || stream is null)
+        {
+            return default;
+        }
             
-            // Gets the size and checks if this texture contains any semi-transparent pixels.
+        // Gets the size and checks if this texture contains any semi-transparent pixels.
             
-            using var image = Image.Load<Rgba32>(stream);
-            var width = image.Width;
-            var height = image.Height;
+        using var image = Image.Load<Rgba32>(stream);
+        var width = image.Width;
+        var height = image.Height;
             
-            var transparencyBits = new BitArray(width * height);
-            var transparencyCutoff = false;
-            var transparencySemi = false;
+        var transparencyBits = new BitArray(width * height);
+        var transparencyCutoff = false;
+        var transparencySemi = false;
             
-            for (var x = 0; x < width; x++)
-            for (var y = 0; y < height; y++)
-            {
-                var p = image[x, y];
-                // Some texture packs need some additional tolerance. 
+        for (var x = 0; x < width; x++)
+        for (var y = 0; y < height; y++)
+        {
+            var p = image[x, y];
+            // Some texture packs need some additional tolerance. 
                 
-                // Check for semi transparency
-                if (p.A is > 5 and < 250)
-                {
-                    transparencySemi = true;
-                }
-
-                // Check for hard transparency
-                if (p.A < 250)
-                {
-                    transparencyBits[x + y * width] = true;
-                    transparencyCutoff = true;
-                }
+            // Check for semi transparency
+            if (p.A is > 5 and < 250)
+            {
+                transparencySemi = true;
             }
 
-            TextureTransparency transparency;
-            if (transparencySemi)
+            // Check for hard transparency
+            if (p.A < 250)
             {
-                transparency = TextureTransparency.Semi;
+                transparencyBits[x + y * width] = true;
+                transparencyCutoff = true;
             }
-            else if (transparencyCutoff)
+        }
+
+        TextureTransparency transparency;
+        if (transparencySemi)
+        {
+            transparency = TextureTransparency.Semi;
+        }
+        else if (transparencyCutoff)
+        {
+            transparency = TextureTransparency.Cutoff;
+        }
+        else
+        {
+            transparency = TextureTransparency.Solid;
+            transparencyBits = null;
+        }
+
+        await stream.DisposeAsync();
+            
+        // Try to read the .mcmeta file to get animation info
+        TextureAnimation? animation = null;
+        var assetIdentifier = new AssetIdentifier(AssetType.TextureMeta, asset.Namespace,  asset.Name);
+        if (Source.TryOpenAsset(assetIdentifier, out stream) && stream is not null)
+        {
+            var meta = await JsonSerializer.DeserializeAsync(stream, JsonContext.Default.TextureMeta);
+            if (meta is not null)
             {
-                transparency = TextureTransparency.Cutoff;
-            }
-            else
-            {
-                transparency = TextureTransparency.Solid;
-                transparencyBits = null;
+                animation = meta.Animation;
             }
 
             await stream.DisposeAsync();
-            
-            // Try to read the .mcmeta file to get animation info
-            TextureAnimation? animation = null;
-            var assetIdentifier = new AssetIdentifier(AssetType.TextureMeta, asset.Namespace,  asset.Name);
-            if (Source.TryOpenAsset(assetIdentifier, out stream) && stream is not null)
-            {
-                var meta = await JsonSerializer.DeserializeAsync(stream, JsonContext.Default.TextureMeta);
-                if (meta is not null)
-                {
-                    animation = meta.Animation;
-                }
-
-                await stream.DisposeAsync();
-            }
-            
-
-            cachedTexture = new CachedTexture()
-            {
-                Width = width,
-                Height = height,
-                Animation = animation,
-                Transparency = transparency,
-                TransparencyBits = transparencyBits,
-            };
-
-            m_Textures.TryAdd(asset, cachedTexture);
-            return cachedTexture;
         }
-        
-        #endregion Textures
+            
 
-        /// <summary>
-        /// Dispose the asset source
-        /// </summary>
-        public void Dispose()
+        cachedTexture = new CachedTexture()
         {
-            Source.Dispose();
-        }
+            Width = width,
+            Height = height,
+            Animation = animation,
+            Transparency = transparency,
+            TransparencyBits = transparencyBits,
+        };
+
+        m_Textures.TryAdd(asset, cachedTexture);
+        return cachedTexture;
+    }
+        
+    #endregion Textures
+
+    /// <summary>
+    /// Dispose the asset source
+    /// </summary>
+    public void Dispose()
+    {
+        Source.Dispose();
     }
 }

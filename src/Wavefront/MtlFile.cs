@@ -1,32 +1,31 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MinecraftWebExporter.Wavefront
+namespace MinecraftWebExporter.Wavefront;
+
+/// <summary>
+/// The material lib file for the wavefront format
+/// </summary>
+public class MtlFile
 {
     /// <summary>
-    /// The material lib file for the wavefront format
+    /// Gets the materials
     /// </summary>
-    public class MtlFile
-    {
-        /// <summary>
-        /// Gets the materials
-        /// </summary>
-        public readonly List<MtlMaterial> Materials = new();
+    public readonly List<MtlMaterial> Materials = new();
         
-        /// <summary>
-        /// Writes the obj data to file
-        /// </summary>
-        /// <param name="file"></param>
-        public async Task WriteToFileAsync(string file)
+    /// <summary>
+    /// Writes the obj data to file
+    /// </summary>
+    /// <param name="file"></param>
+    public async Task WriteToFileAsync(string file)
+    {
+        await Task.Run(() =>
         {
-            await Task.Run(() =>
+            using var writer = new ObjWriter(file);
+            foreach (var material in Materials)
             {
-                using var writer = new ObjWriter(file);
-                foreach (var material in Materials)
-                {
-                    material.Write(writer);
-                }
-            });
-        }
+                material.Write(writer);
+            }
+        });
     }
 }

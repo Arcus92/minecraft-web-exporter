@@ -1,11 +1,10 @@
-﻿namespace MinecraftWebExporter.Minecraft.Models
+﻿namespace MinecraftWebExporter.Minecraft.Models;
+
+/// <summary>
+/// The fluid type
+/// </summary>
+public enum ModelFluidType
 {
-    /// <summary>
-    /// The fluid type
-    /// </summary>
-    public enum ModelFluidType
-    {
-        Water,
-        Lava
-    }
+    Water,
+    Lava
 }

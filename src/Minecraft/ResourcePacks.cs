@@ -3,130 +3,129 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace MinecraftWebExporter.Minecraft
+namespace MinecraftWebExporter.Minecraft;
+
+/// <summary>
+/// A collection of <see cref="ResourcePack"/>s.
+/// Assets are loaded in the same order the 
+/// </summary>
+public class ResourcePacks : IAssetSource
 {
     /// <summary>
-    /// A collection of <see cref="ResourcePack"/>s.
-    /// Assets are loaded in the same order the 
+    /// The list of resource packs
     /// </summary>
-    public class ResourcePacks : IAssetSource
+    private readonly List<ResourcePack> m_List = new();
+
+    /// <summary>
+    /// Adds the resource pack
+    /// </summary>
+    /// <param name="path"></param>
+    public void Add(string path)
     {
-        /// <summary>
-        /// The list of resource packs
-        /// </summary>
-        private readonly List<ResourcePack> m_List = new();
-
-        /// <summary>
-        /// Adds the resource pack
-        /// </summary>
-        /// <param name="path"></param>
-        public void Add(string path)
+        if (Directory.Exists(path))
         {
-            if (Directory.Exists(path))
+            foreach (var file in Directory.EnumerateFiles(path))
             {
-                foreach (var file in Directory.EnumerateFiles(path))
-                {
-                    var ext = Path.GetExtension(file);
-                    if (!ext.Equals(".zip", StringComparison.OrdinalIgnoreCase) &&
-                        !ext.Equals(".jar", StringComparison.OrdinalIgnoreCase))
-                        continue;
+                var ext = Path.GetExtension(file);
+                if (!ext.Equals(".zip", StringComparison.OrdinalIgnoreCase) &&
+                    !ext.Equals(".jar", StringComparison.OrdinalIgnoreCase))
+                    continue;
                     
-                    m_List.Add(new ResourcePack(file));
-                }
-            }
-            else
-            {
-                m_List.Add(new ResourcePack(path));
+                m_List.Add(new ResourcePack(file));
             }
         }
-
-        /// <summary>
-        /// Adds multiple resource packs
-        /// </summary>
-        /// <param name="paths"></param>
-        public void AddRange(IEnumerable<string> paths)
+        else
         {
-            foreach (var path in paths)
-            {
-                Add(path);
-            }
+            m_List.Add(new ResourcePack(path));
         }
+    }
+
+    /// <summary>
+    /// Adds multiple resource packs
+    /// </summary>
+    /// <param name="paths"></param>
+    public void AddRange(IEnumerable<string> paths)
+    {
+        foreach (var path in paths)
+        {
+            Add(path);
+        }
+    }
         
-        /// <summary>
-        /// Returns if the given asset is contained in this resource pack
-        /// </summary>
-        /// <param name="asset"></param>
-        /// <returns></returns>
-        public bool ContainsAsset(AssetIdentifier asset)
+    /// <summary>
+    /// Returns if the given asset is contained in this resource pack
+    /// </summary>
+    /// <param name="asset"></param>
+    /// <returns></returns>
+    public bool ContainsAsset(AssetIdentifier asset)
+    {
+        foreach (var resourcePack in m_List)
         {
-            foreach (var resourcePack in m_List)
+            if (resourcePack.ContainsAsset(asset))
             {
-                if (resourcePack.ContainsAsset(asset))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Opens the asset and returns its stream
-        /// </summary>
-        /// <param name="asset"></param>
-        /// <param name="stream"></param>
-        /// <returns></returns>
-        public bool TryOpenAsset(AssetIdentifier asset, out Stream? stream)
-        {
-            foreach (var resourcePack in m_List)
-            {
-                if (resourcePack.TryOpenAsset(asset, out stream))
-                {
-                    return true;
-                }
-            }
-
-            stream = null;
-            return false;
-        }
-
-        /// <summary>
-        /// Returns all assets for the given type and namespace
-        /// </summary>
-        /// <param name="type"></param>
-        /// <param name="ns"></param>
-        /// <returns></returns>
-        public IEnumerable<AssetIdentifier> GetAssets(AssetType type, string ns)
-        {
-            foreach (var resourcePack in m_List)
-            {
-                foreach (var asset in resourcePack.GetAssets(type, ns))
-                {
-                    yield return asset;
-                }
+                return true;
             }
         }
 
-        /// <summary>
-        /// Returns all assets for the given type and namespace
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<string> GetNamespaces()
+        return false;
+    }
+
+    /// <summary>
+    /// Opens the asset and returns its stream
+    /// </summary>
+    /// <param name="asset"></param>
+    /// <param name="stream"></param>
+    /// <returns></returns>
+    public bool TryOpenAsset(AssetIdentifier asset, out Stream? stream)
+    {
+        foreach (var resourcePack in m_List)
         {
-            return m_List.SelectMany(e => e.GetNamespaces()).Distinct();
+            if (resourcePack.TryOpenAsset(asset, out stream))
+            {
+                return true;
+            }
         }
 
-        /// <summary>
-        /// Dispose all resource packs
-        /// </summary>
-        public void Dispose()
+        stream = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Returns all assets for the given type and namespace
+    /// </summary>
+    /// <param name="type"></param>
+    /// <param name="ns"></param>
+    /// <returns></returns>
+    public IEnumerable<AssetIdentifier> GetAssets(AssetType type, string ns)
+    {
+        foreach (var resourcePack in m_List)
         {
-            foreach (var resourcePack in m_List)
+            foreach (var asset in resourcePack.GetAssets(type, ns))
             {
-                resourcePack.Dispose();
+                yield return asset;
             }
+        }
+    }
+
+    /// <summary>
+    /// Returns all assets for the given type and namespace
+    /// </summary>
+    /// <returns></returns>
+    public IEnumerable<string> GetNamespaces()
+    {
+        return m_List.SelectMany(e => e.GetNamespaces()).Distinct();
+    }
+
+    /// <summary>
+    /// Dispose all resource packs
+    /// </summary>
+    public void Dispose()
+    {
+        foreach (var resourcePack in m_List)
+        {
+            resourcePack.Dispose();
+        }
             
-            m_List.Clear();
-        }
+        m_List.Clear();
     }
 }

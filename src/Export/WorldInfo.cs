@@ -5,59 +5,58 @@ using System.Threading.Tasks;
 using MinecraftWebExporter.Serialization;
 using MinecraftWebExporter.Structs;
 
-namespace MinecraftWebExporter.Export
+namespace MinecraftWebExporter.Export;
+
+/// <summary>
+/// The world info file contains information for the viewer.
+/// </summary>
+public class WorldInfo
 {
     /// <summary>
-    /// The world info file contains information for the viewer.
+    /// Gets and sets the home position
     /// </summary>
-    public class WorldInfo
+    [JsonPropertyName("home")]
+    public Vector3 Home { get; set; }
+
+    /// <summary>
+    /// Gets and sets the detail levels for this world
+    /// </summary>
+    [JsonPropertyName("views")]
+    public ExportDetailLevel[]? Views { get; set; }
+
+    #region Static
+
+    /// <summary>
+    /// Loads the world info from the given path
+    /// </summary>
+    /// <param name="path"></param>
+    /// <returns></returns>
+    public static async Task<WorldInfo> LoadAsync(string path)
     {
-        /// <summary>
-        /// Gets and sets the home position
-        /// </summary>
-        [JsonPropertyName("home")]
-        public Vector3 Home { get; set; }
-
-        /// <summary>
-        /// Gets and sets the detail levels for this world
-        /// </summary>
-        [JsonPropertyName("views")]
-        public ExportDetailLevel[]? Views { get; set; }
-
-        #region Static
-
-        /// <summary>
-        /// Loads the world info from the given path
-        /// </summary>
-        /// <param name="path"></param>
-        /// <returns></returns>
-        public static async Task<WorldInfo> LoadAsync(string path)
-        {
-            // Return an empty region info if the file doesn't exist
-            if (!File.Exists(path))
-                return new WorldInfo();
+        // Return an empty region info if the file doesn't exist
+        if (!File.Exists(path))
+            return new WorldInfo();
             
-            // Opens the file
-            await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
+        // Opens the file
+        await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
             
-            var worldInfo = await JsonSerializer.DeserializeAsync(stream, JsonContext.Default.WorldInfo) ?? new WorldInfo();
-            return worldInfo;
-        }
-        
-        /// <summary>
-        /// Saves the world info to the given path
-        /// </summary>
-        /// <param name="path"></param>
-        /// <param name="worldInfo"></param>
-        /// <returns></returns>
-        public static async Task SaveAsync(string path, WorldInfo worldInfo)
-        {
-            // Opens the file
-            await using var stream = new FileStream(path, FileMode.Create);
-            
-            await JsonSerializer.SerializeAsync(stream, worldInfo, JsonContext.Default.WorldInfo);
-        }
-        
-        #endregion Static
+        var worldInfo = await JsonSerializer.DeserializeAsync(stream, JsonContext.Default.WorldInfo) ?? new WorldInfo();
+        return worldInfo;
     }
+        
+    /// <summary>
+    /// Saves the world info to the given path
+    /// </summary>
+    /// <param name="path"></param>
+    /// <param name="worldInfo"></param>
+    /// <returns></returns>
+    public static async Task SaveAsync(string path, WorldInfo worldInfo)
+    {
+        // Opens the file
+        await using var stream = new FileStream(path, FileMode.Create);
+            
+        await JsonSerializer.SerializeAsync(stream, worldInfo, JsonContext.Default.WorldInfo);
+    }
+        
+    #endregion Static
 }

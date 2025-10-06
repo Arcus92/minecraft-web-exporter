@@ -1,15 +1,14 @@
-﻿namespace MinecraftWebExporter.Minecraft.World
+﻿namespace MinecraftWebExporter.Minecraft.World;
+
+/// <summary>
+/// The type of the height map
+/// </summary>
+public enum HeightmapType
 {
-    /// <summary>
-    /// The type of the height map
-    /// </summary>
-    public enum HeightmapType
-    {
-        MotionBlocking,
-        MotionBlockingNoLeaves,
-        OceanFloor,
-        OceanFloorWorldGen,
-        WorldSurface,
-        WorldSurfaceWorldGen
-    }
+    MotionBlocking,
+    MotionBlockingNoLeaves,
+    OceanFloor,
+    OceanFloorWorldGen,
+    WorldSurface,
+    WorldSurfaceWorldGen
 }

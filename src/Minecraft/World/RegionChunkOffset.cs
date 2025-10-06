@@ -1,29 +1,28 @@
-﻿namespace MinecraftWebExporter.Minecraft.World
+﻿namespace MinecraftWebExporter.Minecraft.World;
+
+/// <summary>
+/// The chunk offset in a <see cref="Region"/>
+/// </summary>
+public readonly struct RegionChunkOffset
 {
-    /// <summary>
-    /// The chunk offset in a <see cref="Region"/>
-    /// </summary>
-    public readonly struct RegionChunkOffset
+    public RegionChunkOffset(int offset, byte size)
     {
-        public RegionChunkOffset(int offset, byte size)
-        {
-            Offset = offset;
-            Size = size;
-        }
+        Offset = offset;
+        Size = size;
+    }
 
-        /// <summary>
-        /// Gets the byte offset
-        /// </summary>
-        public int Offset { get; init; }
+    /// <summary>
+    /// Gets the byte offset
+    /// </summary>
+    public int Offset { get; init; }
 
-        /// <summary>
-        /// Gets the chunk size
-        /// </summary>
-        public byte Size { get; init; }
+    /// <summary>
+    /// Gets the chunk size
+    /// </summary>
+    public byte Size { get; init; }
 
-        public override string ToString()
-        {
-            return $"{nameof(Offset)}: {Offset}, {nameof(Size)}: {Size}";
-        }
+    public override string ToString()
+    {
+        return $"{nameof(Offset)}: {Offset}, {nameof(Size)}: {Size}";
     }
 }

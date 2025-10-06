@@ -1,44 +1,43 @@
 ﻿using MinecraftWebExporter.Structs;
 
-namespace MinecraftWebExporter.Wavefront
+namespace MinecraftWebExporter.Wavefront;
+
+/// <summary>
+/// A material for the <see cref="MtlFile"/>.
+/// </summary>
+public class MtlMaterial
 {
     /// <summary>
-    /// A material for the <see cref="MtlFile"/>.
+    /// Gets and sets the name of the material
     /// </summary>
-    public class MtlMaterial
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets and sets the diffuse color
+    /// </summary>
+    public Vector3? Diffuse { get; set; }
+
+    /// <summary>
+    /// Gets and sets the diffuse map
+    /// </summary>
+    public string? DiffuseMap { get; set; }
+
+    /// <summary>
+    /// Writes the material
+    /// </summary>
+    /// <param name="writer"></param>
+    public void Write(ObjWriter writer)
     {
-        /// <summary>
-        /// Gets and sets the name of the material
-        /// </summary>
-        public string Name { get; set; } = string.Empty;
+        writer.Write("newmtl", Name);
 
-        /// <summary>
-        /// Gets and sets the diffuse color
-        /// </summary>
-        public Vector3? Diffuse { get; set; }
-
-        /// <summary>
-        /// Gets and sets the diffuse map
-        /// </summary>
-        public string? DiffuseMap { get; set; }
-
-        /// <summary>
-        /// Writes the material
-        /// </summary>
-        /// <param name="writer"></param>
-        public void Write(ObjWriter writer)
+        if (Diffuse.HasValue)
         {
-            writer.Write("newmtl", Name);
+            writer.Write("Kd", Diffuse.Value);
+        }
 
-            if (Diffuse.HasValue)
-            {
-                writer.Write("Kd", Diffuse.Value);
-            }
-
-            if (DiffuseMap is not null)
-            {
-                writer.Write("map_Kd", DiffuseMap);
-            }
+        if (DiffuseMap is not null)
+        {
+            writer.Write("map_Kd", DiffuseMap);
         }
     }
 }
