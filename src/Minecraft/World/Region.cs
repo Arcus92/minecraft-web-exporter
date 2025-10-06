@@ -146,7 +146,7 @@ namespace MinecraftWebExporter.Minecraft.World
                         new GZipStream(input, CompressionMode.Decompress, true));
                 case 2:
                     return new DotNet6CompressionStreamFix(
-                        new SharpNBT.ZLib.ZLibStream(input, CompressionMode.Decompress, true));
+                        new ZLibStream(input, CompressionMode.Decompress, true));
                 default:
                     throw new ArgumentException("Invalid compression mode!", nameof(compressionMode));
             }

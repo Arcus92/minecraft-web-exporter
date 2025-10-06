@@ -143,7 +143,7 @@ namespace MinecraftWebExporter.Minecraft
             
             if (!Source.TryOpenAsset(asset, out var stream) || stream is null)
             {
-                return default;
+                return null;
             }
             
             var option = new JsonSerializerOptions()
@@ -245,7 +245,7 @@ namespace MinecraftWebExporter.Minecraft
             await stream.DisposeAsync();
             
             // Try to read the .mcmeta file to get animation info
-            TextureAnimation? animation = default;
+            TextureAnimation? animation = null;
             var assetIdentifier = new AssetIdentifier(AssetType.TextureMeta, asset.Namespace,  asset.Name);
             if (Source.TryOpenAsset(assetIdentifier, out stream) && stream is not null)
             {

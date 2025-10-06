@@ -82,8 +82,8 @@ namespace MinecraftWebExporter.Minecraft.BlockStates.Cache
                 return default;
 
             string? levelText;
-            byte? waterLevel = default;
-            byte? lavaLevel = default;
+            byte? waterLevel = null;
+            byte? lavaLevel = null;
             
             // As far as I know water and lava blocks must be hard coded. I've checked if there is a block-tag.
 

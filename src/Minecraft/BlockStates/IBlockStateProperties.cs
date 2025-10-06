@@ -54,7 +54,7 @@ public class NbtBlockStateProperties : IBlockStateProperties
     /// <inheritdoc cref="IBlockStateProperties.GetValueOrDefault"/>
     public string? GetValueOrDefault(string key)
     {
-        if (Tag[key] is StringTag stringTag)
+        if (Tag.TryGetValue<StringTag>(key, out var stringTag))
         {
             return stringTag.Value;
         }

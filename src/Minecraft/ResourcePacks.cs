@@ -86,7 +86,7 @@ namespace MinecraftWebExporter.Minecraft
                 }
             }
 
-            stream = default;
+            stream = null;
             return false;
         }
 

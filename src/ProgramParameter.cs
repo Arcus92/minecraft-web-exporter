@@ -81,12 +81,12 @@ public struct ProgramParameter
         string? pathToWorld = null;
         var pathToResourcePacks = new List<string>();
         var caveCulling = true;
-        int? caveCullingHeight = default;
+        int? caveCullingHeight = null;
         string? worldAlias = null;
-        Vector3? worldMin = default;
-        Vector3? worldMax = default;
-        Vector3? worldHome = default;
-        int? numberOfThreads = default;
+        Vector3? worldMin = null;
+        Vector3? worldMax = null;
+        Vector3? worldHome = null;
+        int? numberOfThreads = null;
         
         var parser = new CmdLineParser(arguments);
         while (parser.Next())

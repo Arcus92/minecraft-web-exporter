@@ -59,7 +59,7 @@ namespace MinecraftWebExporter.Minecraft
                 var entry = m_ZipArchive.GetEntry(path);
                 if (entry is null)
                 {
-                    stream = default;
+                    stream = null;
                     return false;
                 }
                     

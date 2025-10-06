@@ -18,7 +18,7 @@ public class TestAssetSource : IAssetSource
     /// <inheritdoc cref="IAssetSource.TryOpenAsset"/>
     public bool TryOpenAsset(AssetIdentifier asset, out Stream? stream)
     {
-        stream = default;
+        stream = null;
         return false;
     }
 

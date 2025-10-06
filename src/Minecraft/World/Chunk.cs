@@ -73,7 +73,7 @@ namespace MinecraftWebExporter.Minecraft.World
                 return heightmap;
             }
 
-            return default;
+            return null;
         }
 
         /// <summary>
@@ -83,8 +83,7 @@ namespace MinecraftWebExporter.Minecraft.World
         public async Task LoadAsync(CompoundTag tag)
         {
             // Read the data version
-            var dataVersionTag = tag["DataVersion"] as IntTag;
-            if (dataVersionTag is null)
+            if (!tag.TryGetValue<IntTag>("DataVersion", out var dataVersionTag))
             {
                 throw new ArgumentException("Chunk file does not contain 'DataVersion' tag.", nameof(tag));
             }
@@ -102,7 +101,7 @@ namespace MinecraftWebExporter.Minecraft.World
             else
             {
                 // Read the level
-                levelTag = tag["Level"] as CompoundTag;
+                levelTag = tag.Get<CompoundTag>("Level");
                 if (levelTag is null)
                 {
                     throw new ArgumentException("Chunk file does not contain 'Level' tag.", nameof(tag));
@@ -110,13 +109,13 @@ namespace MinecraftWebExporter.Minecraft.World
             }
             
             // Sets the last update
-            if (levelTag["LastUpdate"] is LongTag lastUpdateTag)
+            if (levelTag.TryGetValue<LongTag>("LastUpdate", out var lastUpdateTag))
             {
                 LastUpdate = lastUpdateTag.Value;
             }
 
             // Read the height maps
-            if (levelTag["Heightmaps"] is CompoundTag heightmapsTag)
+            if (levelTag.TryGetValue<CompoundTag>("Heightmaps", out var heightmapsTag))
             {
                 foreach (var t in heightmapsTag)
                 {
@@ -131,7 +130,7 @@ namespace MinecraftWebExporter.Minecraft.World
             }
             
             // Read the legacy height map
-            if (levelTag["HeightMap"] is IntArrayTag legacyHeightmapTag)
+            if (levelTag.TryGetValue<IntArrayTag>("HeightMap", out var legacyHeightmapTag))
             {
                 var heights = legacyHeightmapTag.Select(h => (ushort) h).ToArray();
                 m_Heightmaps[HeightmapType.MotionBlocking] = new Heightmap(this, heights);
@@ -141,8 +140,8 @@ namespace MinecraftWebExporter.Minecraft.World
             }
             
             // Read the sections
-            var sectionsTag = levelTag["sections"] as ListTag ?? levelTag["Sections"] as ListTag;
-            if (sectionsTag is null)
+            if (!levelTag.TryGetValue<ListTag>("sections", out var sectionsTag) && 
+                !levelTag.TryGetValue<ListTag>("Sections", out sectionsTag))
             {
                 throw new ArgumentException("Chunk file does not contain 'Sections' tag.", nameof(tag));
             }
@@ -178,12 +177,7 @@ namespace MinecraftWebExporter.Minecraft.World
         /// <returns></returns>
         public Section? GetSection(sbyte y)
         {
-            if (m_Sections.TryGetValue(y, out var section))
-            {
-                return section;
-            }
-            
-            return null;
+            return m_Sections.GetValueOrDefault(y);
         }
 
         /// <summary>

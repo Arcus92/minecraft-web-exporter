@@ -133,19 +133,19 @@ namespace MinecraftWebExporter.Minecraft.World
             var region = GetRegion(regionX, regionZ);
             if (region is null)
             {
-                return default;
+                return null;
             }
 
             var chunk = region.GetChunk(chunkX, chunkZ);
             if (chunk is null)
             {
-                return default;
+                return null;
             }
 
             var section = chunk.GetSection(chunkY);
             if (section is null)
             {
-                return default;
+                return null;
             }
             
             return section.GetBlock(blockX, blockY, blockZ);
@@ -199,19 +199,19 @@ namespace MinecraftWebExporter.Minecraft.World
             var region = await GetOrLoadRegionAsync(regionX, regionZ);
             if (region is null)
             {
-                return default;
+                return 0;
             }
 
             var chunk = await region.GetOrLoadChunkAsync(chunkX, chunkZ);
             if (chunk is null)
             {
-                return default;
+                return 0;
             }
 
             var section = chunk.GetSection(chunkY);
             if (section is null)
             {
-                return default;
+                return 0;
             }
             
             return section.GetBlockLight(blockX, blockY, blockZ);
@@ -265,19 +265,19 @@ namespace MinecraftWebExporter.Minecraft.World
             var region = await GetOrLoadRegionAsync(regionX, regionZ);
             if (region is null)
             {
-                return default;
+                return null;
             }
 
             var chunk = await region.GetOrLoadChunkAsync(chunkX, chunkZ);
             if (chunk is null)
             {
-                return default;
+                return null;
             }
 
             var section = chunk.GetSection(chunkY);
             if (section is null)
             {
-                return default;
+                return null;
             }
             
             return section.GetBiome(blockX, blockZ);
@@ -299,13 +299,13 @@ namespace MinecraftWebExporter.Minecraft.World
             var region = await GetOrLoadRegionAsync(regionX, regionZ);
             if (region is null)
             {
-                return default;
+                return 0;
             }
 
             var chunk = await region.GetOrLoadChunkAsync(chunkX, chunkZ);
             if (chunk is null)
             {
-                return default;
+                return 0;
             }
 
             if (chunk.TryGetHeightmap(type, out var heightmap))

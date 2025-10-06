@@ -150,7 +150,7 @@ namespace MinecraftWebExporter.Minecraft.World
             z = (byte) (z / 4);
 
             if (m_BiomePalette is null)
-                return default;
+                return null;
             
             if (m_Biomes is null)
                 return m_BiomePalette[0];
@@ -174,7 +174,7 @@ namespace MinecraftWebExporter.Minecraft.World
             LongArrayTag? blockStatesTag;
             
             // Loads the block lights
-            if (sectionTag["BlockLight"] is ByteArrayTag blockLightTag)
+            if (sectionTag.TryGetValue<ByteArrayTag>("BlockLight", out var blockLightTag))
             {
                 m_BlockLights = new byte[blockLightTag.Count];
                 for (var i = 0; i < m_BlockLights.Length; i++)
@@ -183,8 +183,8 @@ namespace MinecraftWebExporter.Minecraft.World
                 }
             }
             
-            // Loads the sky lights
-            if (sectionTag["SkyLight"] is ByteArrayTag skyLightTag)
+            // Loads the skylights
+            if (sectionTag.TryGetValue<ByteArrayTag>("SkyLight", out var skyLightTag))
             {
                 m_SkyLights = new byte[skyLightTag.Count];
                 for (var i = 0; i < m_SkyLights.Length; i++)
@@ -196,26 +196,24 @@ namespace MinecraftWebExporter.Minecraft.World
             // Minecraft 1.18
             if (dataVersion >= 2825)
             {
-                var dataTag = sectionTag["block_states"] as CompoundTag;
-                if (dataTag is null)
+                if (!sectionTag.TryGetValue<CompoundTag>("block_states", out var dataTag))
                 {
                     return;
                 }
-                paletteTag = dataTag["palette"] as ListTag;
-                blockStatesTag = dataTag["data"] as LongArrayTag;
+                dataTag.TryGetValue<ListTag>("palette", out paletteTag);
+                dataTag.TryGetValue<LongArrayTag>("data", out blockStatesTag);
             }
             else
             {
-                paletteTag = sectionTag["Palette"] as ListTag;
-                blockStatesTag = sectionTag["BlockStates"] as LongArrayTag;
+                sectionTag.TryGetValue<ListTag>("Palette", out paletteTag);
+                sectionTag.TryGetValue<LongArrayTag>("BlockStates", out blockStatesTag);
             }
             
             // Uses legacy block tag
             // TODO: Find the exact data version 
-            if (sectionTag["Blocks"] is ByteArrayTag blocksTag)
+            if (sectionTag.TryGetValue<ByteArrayTag>("Blocks", out var blocksTag))
             {
-                var dataTag = sectionTag["Data"] as ByteArrayTag;
-                Debug.Assert(dataTag != null, nameof(dataTag) + " != null");
+                var dataTag = sectionTag.Get<ByteArrayTag>("Data");
                 var idToPositionInPalette = new Dictionary<(byte, byte), ushort>();
                 var blockPalette = new List<CachedBlockState>();
                 m_BlockStates = new ushort[BlockCount];
@@ -270,9 +268,9 @@ namespace MinecraftWebExporter.Minecraft.World
             m_BlockStates = ChunkHelper.ReadLongArray(dataVersion, bits, BlockCount, blockStatesTag);
 
             // Loads the biomes
-            if (sectionTag["biomes"] is CompoundTag biomesTag)
+            if (sectionTag.TryGetValue<CompoundTag>("biomes", out var biomesTag))
             {
-                if (biomesTag["palette"] is ListTag biomesPaletteTag)
+                if (biomesTag.TryGetValue<ListTag>("palette", out var biomesPaletteTag))
                 {
                     m_BiomePalette = new string[biomesPaletteTag.Count];
                     for (var i = 0; i < m_BiomePalette.Length; i++)
@@ -282,7 +280,7 @@ namespace MinecraftWebExporter.Minecraft.World
                     }
                 }
 
-                if (biomesTag["data"] is LongArrayTag biomesDataTag && m_BiomePalette is not null)
+                if (biomesTag.TryGetValue<LongArrayTag>("data", out var biomesDataTag) && m_BiomePalette is not null)
                 {
                     bits = (int) Math.Ceiling(Math.Log2(m_BiomePalette.Length));
                     m_Biomes = ChunkHelper.ReadLongArray(dataVersion, bits, 64, biomesDataTag);
@@ -299,12 +297,13 @@ namespace MinecraftWebExporter.Minecraft.World
         /// <returns></returns>
         private async ValueTask<CachedBlockState> GetBlockAsync(CompoundTag blockData)
         {
-            var blockNameTag = blockData["Name"] as StringTag;
-            if (blockNameTag is null)
+            if (!blockData.TryGetValue<StringTag>("Name", out var blockNameTag))
                 return default;
-            var blockPropertiesTag = blockData["Properties"] as CompoundTag;
-            var blockName = blockNameTag.Value;
+            
+            blockData.TryGetValue<CompoundTag>("Properties", out var blockPropertiesTag);
             var properties = IBlockStateProperties.Create(blockPropertiesTag);
+            
+            var blockName = blockNameTag.Value;
             return await GetBlockAsync(blockName, properties);
         }
         
