@@ -2,6 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using MinecraftWebExporter.Serialization;
 using MinecraftWebExporter.Structs;
 
 namespace MinecraftWebExporter.Export
@@ -38,14 +39,8 @@ namespace MinecraftWebExporter.Export
             
             // Opens the file
             await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
-
-            var option = new JsonSerializerOptions()
-            {
-                AllowTrailingCommas = true,
-                ReadCommentHandling = JsonCommentHandling.Skip,
-            };
             
-            var worldInfo = await JsonSerializer.DeserializeAsync<WorldInfo>(stream, option) ?? new WorldInfo();
+            var worldInfo = await JsonSerializer.DeserializeAsync(stream, JsonContext.Default.WorldInfo) ?? new WorldInfo();
             return worldInfo;
         }
         
@@ -60,7 +55,7 @@ namespace MinecraftWebExporter.Export
             // Opens the file
             await using var stream = new FileStream(path, FileMode.Create);
             
-            await JsonSerializer.SerializeAsync(stream, worldInfo);
+            await JsonSerializer.SerializeAsync(stream, worldInfo, JsonContext.Default.WorldInfo);
         }
         
         #endregion Static

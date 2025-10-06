@@ -7,7 +7,7 @@ using MinecraftWebExporter.Minecraft.BlockStates;
 using MinecraftWebExporter.Minecraft.Models;
 using MinecraftWebExporter.Minecraft.Models.Cache;
 using MinecraftWebExporter.Minecraft.Textures;
-using MinecraftWebExporter.Utils;
+using MinecraftWebExporter.Serialization;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -69,13 +69,7 @@ namespace MinecraftWebExporter.Minecraft
                 return null;
             }
             
-            var option = new JsonSerializerOptions()
-            {
-                AllowTrailingCommas = true,
-                ReadCommentHandling = JsonCommentHandling.Skip,
-            };
-
-            model = await JsonSerializer.DeserializeAsync<Model>(stream, option);
+            model = await JsonSerializer.DeserializeAsync(stream, JsonContext.Default.Model);
             if (model == null)
             {
                 throw new ArgumentException("Could not read json model data!");
@@ -146,15 +140,7 @@ namespace MinecraftWebExporter.Minecraft
                 return null;
             }
             
-            var option = new JsonSerializerOptions()
-            {
-                AllowTrailingCommas = true,
-                ReadCommentHandling = JsonCommentHandling.Skip,
-            };
-            
-            option.Converters.Add(new JsonStringFixConverter());
-            
-            blockState = await JsonSerializer.DeserializeAsync<BlockState>(stream, option);
+            blockState = await JsonSerializer.DeserializeAsync(stream, JsonContext.Default.BlockState);
             if (blockState is null)
             {
                 throw new ArgumentException("Could not read json block state data!");
@@ -249,13 +235,7 @@ namespace MinecraftWebExporter.Minecraft
             var assetIdentifier = new AssetIdentifier(AssetType.TextureMeta, asset.Namespace,  asset.Name);
             if (Source.TryOpenAsset(assetIdentifier, out stream) && stream is not null)
             {
-                var option = new JsonSerializerOptions()
-                {
-                    AllowTrailingCommas = true,
-                    ReadCommentHandling = JsonCommentHandling.Skip,
-                };
-                
-                var meta = await JsonSerializer.DeserializeAsync<TextureMeta>(stream, option);
+                var meta = await JsonSerializer.DeserializeAsync(stream, JsonContext.Default.TextureMeta);
                 if (meta is not null)
                 {
                     animation = meta.Animation;

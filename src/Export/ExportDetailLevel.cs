@@ -1,5 +1,4 @@
-﻿using System;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace MinecraftWebExporter.Export
 {
@@ -12,7 +11,7 @@ namespace MinecraftWebExporter.Export
         /// Gets the filename prefix. This is used to build the output file: {filename}.{x}.{z}.m
         /// </summary>
         [JsonPropertyName("filename")]
-        public string Filename { get; init; } = String.Empty;
+        public string Filename { get; init; } = string.Empty;
 
         /// <summary>
         /// Gets and sets the detail level

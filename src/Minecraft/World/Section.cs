@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using MinecraftWebExporter.Minecraft.BlockStates;
 using MinecraftWebExporter.Minecraft.BlockStates.Cache;

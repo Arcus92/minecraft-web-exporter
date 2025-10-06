@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using MinecraftWebExporter.Minecraft.BlockStates.Cache;
+using MinecraftWebExporter.Serialization;
 
 namespace MinecraftWebExporter.Minecraft.BlockStates
 {
@@ -80,14 +81,10 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
         /// <exception cref="JsonException"></exception>
         public override BlockStateVariant[] Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
-            var variantConverter = options.GetConverter(typeof(BlockStateVariant)) as JsonConverter<BlockStateVariant>;
-            if (variantConverter is null)
-                throw new ArgumentNullException();
-            
             var list = new List<BlockStateVariant>();
             if (reader.TokenType == JsonTokenType.StartObject)
             {
-                var variant = variantConverter.Read(ref reader, typeof(BlockStateVariant), options);
+                var variant = JsonSerializer.Deserialize(ref reader, JsonContext.Default.BlockStateVariant);
                 if (variant is not null)
                 {
                     list.Add(variant);
@@ -103,7 +100,7 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
                     }
                     else if (reader.TokenType == JsonTokenType.StartObject)
                     {
-                        var variant = variantConverter.Read(ref reader, typeof(BlockStateVariant), options);
+                        var variant = JsonSerializer.Deserialize(ref reader, JsonContext.Default.BlockStateVariant);
                         if (variant is not null)
                         {
                             list.Add(variant);

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using MinecraftWebExporter.Serialization;
 
 namespace MinecraftWebExporter.Export
 {
@@ -82,14 +83,8 @@ namespace MinecraftWebExporter.Export
             
             // Opens the file
             await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read);
-
-            var option = new JsonSerializerOptions()
-            {
-                AllowTrailingCommas = true,
-                ReadCommentHandling = JsonCommentHandling.Skip,
-            };
             
-            var regionInfo = await JsonSerializer.DeserializeAsync<RegionInfo>(stream, option) ?? new RegionInfo();
+            var regionInfo = await JsonSerializer.DeserializeAsync(stream, JsonContext.Default.RegionInfo) ?? new RegionInfo();
             return regionInfo;
         }
         
@@ -104,7 +99,7 @@ namespace MinecraftWebExporter.Export
             // Opens the file
             await using var stream = new FileStream(path, FileMode.Create);
             
-            await JsonSerializer.SerializeAsync(stream, regionInfo);
+            await JsonSerializer.SerializeAsync(stream, regionInfo, JsonContext.Default.RegionInfo);
         }
         
         #endregion Static

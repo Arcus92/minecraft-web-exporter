@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MinecraftWebExporter.Serialization;
 
 namespace MinecraftWebExporter.Minecraft.BlockStates
 {
@@ -96,11 +96,6 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
             {
                 throw new JsonException();
             }
-
-            // Dictionary converter
-            var converter =
-                options.GetConverter(typeof(Dictionary<string, string>)) as JsonConverter<Dictionary<string, string>>;
-            Debug.Assert(converter != null, nameof(converter) + " != null");
             
             var when = new BlockStateWhen();
    
@@ -130,7 +125,7 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
 
                                     if (reader.TokenType == JsonTokenType.StartObject)
                                     {
-                                        var item = converter.Read(ref reader, typeof(Dictionary<string, string>), options);
+                                        var item = JsonSerializer.Deserialize(ref reader, JsonContext.Default.DictionaryStringString);
                                         if (item is not null)
                                         {
                                             when.Add(item);
@@ -169,7 +164,7 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
 
                                     if (reader.TokenType == JsonTokenType.StartObject)
                                     {
-                                        var subItem = converter.Read(ref reader, typeof(Dictionary<string, string>), options);
+                                        var subItem = JsonSerializer.Deserialize(ref reader, JsonContext.Default.DictionaryStringString);
                                         if (subItem is not null)
                                         {
                                             foreach (var pair in subItem)
@@ -194,7 +189,7 @@ namespace MinecraftWebExporter.Minecraft.BlockStates
                     else
                     {
                         reader = start;
-                        var item = converter.Read(ref reader, typeof(Dictionary<string, string>), options);
+                        var item = JsonSerializer.Deserialize(ref reader, JsonContext.Default.DictionaryStringString);
                         if (item is not null)
                         {
                             when.Add(item);
