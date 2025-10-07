@@ -7,7 +7,13 @@ public enum ModelTintType
 {
     Default,
     Grass,
+    SpruceLeaves,
+    BirchLeaves,
     Foliage,
+    FoliageDry,
     Water,
     Redstone,
+    Stem,
+    AttachedStem,
+    LilyPad
 }

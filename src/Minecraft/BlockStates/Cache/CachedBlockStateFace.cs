@@ -1,4 +1,5 @@
 ﻿using System;
+using MinecraftWebExporter.Minecraft.Data;
 using MinecraftWebExporter.Minecraft.Models;
 using MinecraftWebExporter.Minecraft.Models.Cache;
 using MinecraftWebExporter.Structs;
@@ -383,32 +384,7 @@ public readonly struct CachedBlockStateFace
     /// <returns></returns>
     public static CachedBlockStateFace Create(AssetIdentifier blockAsset, CachedModelFace face)
     {
-        var tintType = ModelTintType.Default;
-
-        // There is this thing 'tintIndex'. This allows one block to have multiple tinted faces but currently
-        // Minecraft doesn't use it. I simply check if this value is set ot not, because I don't know the intended
-        // order of the the indexes. Since it is not used in vanilla Minecraft, this should be fine. 
-        // Also the tint-able blocks are hard-coded. Maybe I could block-tags in future.
-        if (face.TintIndex.HasValue)
-        {
-            switch (blockAsset.Name)
-            {
-                case "grass_block":
-                    tintType = ModelTintType.Grass;
-                    break;
-                case "vine" or "grass" or "tall_grass" or "fern" or "large_fern" or "blockAsset/fern" or "lily_pad"
-                    or "melon_stem" or "attached_melon_stem" or "pumpkin_stem" or "attached_pumpkin_stem"
-                    or "oak_leaves" or "acacia_leaves" or "birch_leaves" or "dark_oak_leaves" or "jungle_leaves" or "spruce_leaves":
-                    tintType = ModelTintType.Foliage;
-                    break;
-                case "water_cauldron":
-                    tintType = ModelTintType.Water;
-                    break;
-                case "redstone_wire":
-                    tintType = ModelTintType.Redstone;
-                    break;
-            }
-        }
+        var tintType = BlockData.GetTintType(blockAsset, face);
             
         return new CachedBlockStateFace()
         {

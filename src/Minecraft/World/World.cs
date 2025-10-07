@@ -5,6 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using MinecraftWebExporter.Minecraft.BlockStates;
 using MinecraftWebExporter.Minecraft.BlockStates.Cache;
+using MinecraftWebExporter.Minecraft.Data;
 using MinecraftWebExporter.Minecraft.Models;
 using MinecraftWebExporter.Structs;
 
@@ -386,73 +387,6 @@ public class World : IAsyncDisposable
     public static readonly AssetIdentifier TextureLavaFlow = new(AssetType.Texture, "minecraft", "block/lava_flow");
         
     /// <summary>
-    /// A struct for a tint color map
-    /// </summary>
-    public readonly struct ColorMap
-    {
-        /// <summary>
-        /// The lower left color
-        /// </summary>
-        public Vector3 Uv00 { get; init; }
-            
-        /// <summary>
-        /// The lower right color
-        /// </summary>
-        public Vector3 Uv10 { get; init; }
-            
-        /// <summary>
-        /// The upper left color
-        /// </summary>
-        public Vector3 Uv01 { get; init; }
-
-        /// <summary>
-        /// Gets the value
-        /// </summary>
-        /// <param name="u"></param>
-        /// <param name="v"></param>
-        /// <returns></returns>
-        public Vector3 GetValue(float u, float v)
-        {
-            var x = u - v;
-            var y = 1f - u;
-            var z = v;
-                
-            return new Vector3()
-            {
-                X = x * Uv00.X + y * Uv10.X + z * Uv01.X, 
-                Y = x * Uv00.Y + y * Uv10.Y + z * Uv01.Y, 
-                Z = x * Uv00.Z + y * Uv10.Z + z * Uv01.Z,
-            };
-        }
-    }
-
-    /// <summary>
-    /// The grass tint color map
-    /// </summary>
-    public static readonly ColorMap TintGrass = new()
-    {
-        Uv00 = new() {X = 191f / 255f, Y = 183f / 255f, Z = 85f / 255f},
-        Uv10 = new() {X = 128f / 255f, Y = 180f / 255f, Z = 151f / 255f},
-        Uv01 = new() {X = 71f / 255f, Y = 205f / 255f, Z = 51f / 255f},
-    };
-        
-    /// <summary>
-    /// The foliage tint color map
-    /// </summary>
-    public static readonly ColorMap TintFoliage = new()
-    {
-        Uv00 = new() {X = 174f / 255f, Y = 164f / 255f, Z = 42f / 255f},
-        Uv10 = new() {X = 96f / 255f, Y = 161f / 255f, Z = 123f / 255f},
-        Uv01 = new() {X = 26f / 255f, Y = 191f / 255f, Z = 0f / 255f},
-    };
-
-    /// <summary>
-    /// The redstone write color
-    /// </summary>
-    public static readonly Vector3 ColorRedstoneWire = new Vector3() {X = 252f / 255f, Y = 49f / 255f, Z = 0f / 255f};
-        
-        
-    /// <summary>
     /// Gets the tint color based on the biome and <see cref="tintType"/>.
     /// </summary>
     /// <param name="x"></param>
@@ -462,16 +396,28 @@ public class World : IAsyncDisposable
     /// <returns></returns>
     public async ValueTask<Vector3> GetTintColorAsync(int x, int y, int z, ModelTintType tintType)
     {
-        // This block isn't tinted
-        if (tintType == ModelTintType.Default)
-            return Vector3.One;
+        // These block aren't tinted
+        switch (tintType)
+        {
+            case ModelTintType.Default:
+                return Vector3.One;
+            case ModelTintType.SpruceLeaves:
+                return BlockData.SpruceLeavesColor;
+            case ModelTintType.BirchLeaves:
+                return BlockData.BirchLeavesColor;
+            case ModelTintType.Redstone:
+                const byte power = 15; // TODO: Get from block data
+                return BlockData.GetPowerColor(power);
+            case ModelTintType.LilyPad:
+                return BlockData.LilyPadColor;
+            case ModelTintType.Stem:
+                const byte age = 15; // TODO: Get from block data
+                return BlockData.GetStemColor(age);
+        }
 
-        if (tintType == ModelTintType.Redstone)
-            return ColorRedstoneWire;
-            
         // Fetches the biome info
         var biomeName = await GetBiomeAsync(x, y, z);
-        var biome = Biome.Get(biomeName);
+        var biome = BiomeData.Get(biomeName);
 
         if (tintType == ModelTintType.Water)
             return biome.WaterSurfaceColor;
@@ -486,9 +432,11 @@ public class World : IAsyncDisposable
         switch (tintType)
         {
             case ModelTintType.Grass:
-                return TintGrass.GetValue(adjTemperature, adjRainfall);
+                return BlockData.GrassTint.GetValue(adjTemperature, adjRainfall);
             case ModelTintType.Foliage:
-                return TintFoliage.GetValue(adjTemperature, adjRainfall);
+                return BlockData.FoliageTint.GetValue(adjTemperature, adjRainfall);
+            case ModelTintType.FoliageDry:
+                return BlockData.FoliageDryTint.GetValue(adjTemperature, adjRainfall);
             default:
                 return Vector3.One;
         }
