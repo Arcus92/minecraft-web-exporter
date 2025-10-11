@@ -67,7 +67,8 @@ public class Region : IAsyncDisposable
         }
             
         var path = GetRegionFilePath();
-        if (!File.Exists(path))
+        var fileInfo = new FileInfo(path);
+        if (!fileInfo.Exists || fileInfo.Length == 0)
         {
             return true;
         }
